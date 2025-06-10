@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoS4: Geospatial Step Sequencer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow-x: auto;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid #00ff88;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            color: #00ff88;
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            color: #b0b0b0;
+        }
+
+        .main-container {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .control-panel {
+            width: 300px;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid #333;
+            height: fit-content;
+        }
+
+        .control-section {
+            margin-bottom: 25px;
+        }
+
+        .control-section h3 {
+            color: #00ff88;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+        }
+
+        .geo-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .geo-button {
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #555;
+            border-radius: 8px;
+            color: #e0e0e0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .geo-button:hover {
+            background: rgba(0, 255, 136, 0.2);
+            border-color: #00ff88;
+        }
+
+        .geo-button.active {
+            background: rgba(0, 255, 136, 0.3);
+            border-color: #00ff88;
+            color: #00ff88;
+        }
+
+        .slider-container {
+            margin: 10px 0;
+        }
+
+        .slider-container label {
+            display: block;
+            margin-bottom: 5px;
+            color: #b0b0b0;
+            font-size: 0.9em;
+        }
+
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #333;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #00ff88;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        .play-button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(45deg, #00ff88, #00cc6a);
+            border: none;
+            border-radius: 10px;
+            color: #000;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+
+        .play-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.4);
+        }
+
+        .sequencer-container {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid #333;
+        }
+
+        .sequencer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .bpm-display {
+            font-size: 1.2em;
+            color: #00ff88;
+        }
+
+        .sequencer-grid {
+            display: grid;
+            grid-template-columns: 120px repeat(16, 1fr);
+            gap: 2px;
+            margin-bottom: 20px;
+        }
+
+        .track-label {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            font-size: 0.9em;
+            border-left: 3px solid var(--track-color);
+        }
+
+        .step {
+            aspect-ratio: 1;
+            border: 1px solid #333;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .step.active {
+            background: var(--track-color);
+            box-shadow: 0 0 10px var(--track-color);
+            border-color: var(--track-color);
+        }
+
+        .step.playing {
+            animation: pulse 0.1s ease-in-out;
+        }
+
+        .step.current-beat {
+            border: 2px solid #fff;
+            border-radius: 6px;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .geo-visualization {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            border: 1px solid #333;
+        }
+
+        .geo-viz-title {
+            color: #00ff88;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .geo-pattern {
+            display: grid;
+            grid-template-columns: repeat(16, 1fr);
+            gap: 1px;
+            height: 100px;
+            margin-bottom: 10px;
+        }
+
+        .geo-cell {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .geo-cell.road { background: #ff6b6b; }
+        .geo-cell.building { background: #4ecdc4; }
+        .geo-cell.water { background: #45b7d1; }
+        .geo-cell.park { background: #96ceb4; }
+
+        .legend {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            font-size: 0.8em;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        .transport-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 15px;
+        }
+
+        .transport-btn {
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #555;
+            border-radius: 6px;
+            color: #e0e0e0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .transport-btn:hover {
+            background: rgba(0, 255, 136, 0.2);
+            border-color: #00ff88;
+        }
+
+        .status-bar {
+            text-align: center;
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            font-size: 0.9em;
+            color: #b0b0b0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>GeoS4</h1>
+        <p>Algorithmic Pattern-Making Through Spatial Sonification</p>
+    </div>
+
+    <div class="main-container">
+        <div class="control-panel">
+            <div class="control-section">
+                <h3>Geographic Data</h3>
+                <div class="geo-selector">
+                    <button class="geo-button active" data-type="urban">Urban</button>
+                    <button class="geo-button" data-type="coastal">Coastal</button>
+                    <button class="geo-button" data-type="forest">Forest</button>
+                    <button class="geo-button" data-type="suburban">Suburban</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>Spatial Parameters</h3>
+                <div class="slider-container">
+                    <label>Grid Density</label>
+                    <input type="range" class="slider" id="density" min="8" max="32" value="16">
+                </div>
+                <div class="slider-container">
+                    <label>Feature Sensitivity</label>
+                    <input type="range" class="slider" id="sensitivity" min="0" max="100" value="70">
+                </div>
+                <div class="slider-container">
+                    <label>Temporal Scale</label>
+                    <input type="range" class="slider" id="scale" min="50" max="200" value="120">
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>Musical Parameters</h3>
+                <div class="slider-container">
+                    <label>BPM</label>
+                    <input type="range" class="slider" id="bpm" min="60" max="180" value="120">
+                </div>
+                <div class="slider-container">
+                    <label>Swing</label>
+                    <input type="range" class="slider" id="swing" min="0" max="100" value="0">
+                </div>
+            </div>
+
+            <button class="play-button" id="playButton">▶ Generate & Play</button>
+        </div>
+
+        <div class="sequencer-container">
+            <div class="sequencer-header">
+                <h3>Step Sequencer Grid</h3>
+                <div class="bpm-display">120 BPM</div>
+            </div>
+
+            <div class="sequencer-grid" id="sequencerGrid">
+                <!-- Grid will be generated by JavaScript -->
+            </div>
+
+            <div class="geo-visualization">
+                <div class="geo-viz-title">Geographic Pattern Mapping</div>
+                <div class="geo-pattern" id="geoPattern">
+                    <!-- Geographic visualization -->
+                </div>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ff6b6b;"></div>
+                        <span>Roads</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #4ecdc4;"></div>
+                        <span>Buildings</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #45b7d1;"></div>
+                        <span>Water</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #96ceb4;"></div>
+                        <span>Parks</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="transport-controls">
+                <button class="transport-btn" id="stopButton">⏹ Stop</button>
+                <button class="transport-btn" id="clearButton">🗑 Clear</button>
+                <button class="transport-btn" id="randomButton">🎲 Randomize</button>
+            </div>
+
+            <div class="status-bar" id="statusBar">
+                Select geographic data type and adjust parameters to generate musical patterns
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class GeoS4Interface {
+            constructor() {
+                this.isPlaying = false;
+                this.currentBeat = 0;
+                this.bpm = 120;
+                this.tracks = [
+                    { name: 'Roads (Kick)', color: '#ff6b6b', pattern: [] },
+                    { name: 'Buildings (Snare)', color: '#4ecdc4', pattern: [] },
+                    { name: 'Water (HiHat)', color: '#45b7d1', pattern: [] },
+                    { name: 'Parks (Perc)', color: '#96ceb4', pattern: [] }
+                ];
+                this.steps = 16;
+                this.playInterval = null;
+                this.currentGeoType = 'urban';
+
+                // Audio context and nodes
+                this.audioContext = null;
+                this.masterGain = null;
+                this.isAudioInitialized = false;
+
+                this.initializeInterface();
+                this.setupEventListeners();
+                this.generateInitialPattern();
+            }
+
+            initializeInterface() {
+                this.createSequencerGrid();
+                this.createGeoVisualization();
+                this.updateBPMDisplay();
+            }
+
+            async initializeAudio() {
+                if (this.isAudioInitialized) return;
+
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    this.masterGain = this.audioContext.createGain();
+                    this.masterGain.connect(this.audioContext.destination);
+                    this.masterGain.gain.value = 0.7;
+                    this.isAudioInitialized = true;
+                    this.updateStatus('Audio initialized - ready to play!');
+                } catch (error) {
+                    console.error('Failed to initialize audio:', error);
+                    this.updateStatus('Audio initialization failed');
+                }
+            }
+
+            // Kick drum synthesis (Roads)
+            playKick() {
+                if (!this.audioContext) return;
+
+                const now = this.audioContext.currentTime;
+
+                // Oscillator for the punch
+                const osc = this.audioContext.createOscillator();
+                const oscGain = this.audioContext.createGain();
+
+                osc.connect(oscGain);
+                oscGain.connect(this.masterGain);
+
+                osc.frequency.setValueAtTime(60, now);
+                osc.frequency.exponentialRampToValueAtTime(0.01, now + 0.5);
+
+                oscGain.gain.setValueAtTime(1, now);
+                oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+
+                osc.start(now);
+                osc.stop(now + 0.5);
+
+                // Noise for the click
+                const bufferSize = this.audioContext.sampleRate * 0.1;
+                const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+                const output = buffer.getChannelData(0);
+
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
+                }
+
+                const noise = this.audioContext.createBufferSource();
+                const noiseGain = this.audioContext.createGain();
+                const noiseFilter = this.audioContext.createBiquadFilter();
+
+                noise.buffer = buffer;
+                noise.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+                noiseGain.connect(this.masterGain);
+
+                noiseFilter.type = 'highpass';
+                noiseFilter.frequency.value = 1000;
+
+                noiseGain.gain.setValueAtTime(0.5, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+
+                noise.start(now);
+            }
+
+            // Snare drum synthesis (Buildings)
+            playSnare() {
+                if (!this.audioContext) return;
+
+                const now = this.audioContext.currentTime;
+
+                // Tone component
+                const osc = this.audioContext.createOscillator();
+                const oscGain = this.audioContext.createGain();
+
+                osc.connect(oscGain);
+                oscGain.connect(this.masterGain);
+
+                osc.frequency.value = 200;
+                oscGain.gain.setValueAtTime(0.3, now);
+                oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+
+                osc.start(now);
+                osc.stop(now + 0.2);
+
+                // Noise component
+                const bufferSize = this.audioContext.sampleRate * 0.2;
+                const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+                const output = buffer.getChannelData(0);
+
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 1);
+                }
+
+                const noise = this.audioContext.createBufferSource();
+                const noiseGain = this.audioContext.createGain();
+                const noiseFilter = this.audioContext.createBiquadFilter();
+
+                noise.buffer = buffer;
+                noise.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+                noiseGain.connect(this.masterGain);
+
+                noiseFilter.type = 'bandpass';
+                noiseFilter.frequency.value = 1000;
+                noiseFilter.Q.value = 0.5;
+
+                noiseGain.gain.setValueAtTime(0.8, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+
+                noise.start(now);
+            }
+
+            // Hi-hat synthesis (Water)
+            playHiHat() {
+                if (!this.audioContext) return;
+
+                const now = this.audioContext.currentTime;
+
+                const bufferSize = this.audioContext.sampleRate * 0.1;
+                const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+                const output = buffer.getChannelData(0);
+
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 3);
+                }
+
+                const noise = this.audioContext.createBufferSource();
+                const noiseGain = this.audioContext.createGain();
+                const noiseFilter = this.audioContext.createBiquadFilter();
+
+                noise.buffer = buffer;
+                noise.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+                noiseGain.connect(this.masterGain);
+
+                noiseFilter.type = 'highpass';
+                noiseFilter.frequency.value = 8000;
+
+                noiseGain.gain.setValueAtTime(0.3, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+
+                noise.start(now);
+            }
+
+            // Percussion synthesis (Parks)
+            playPerc() {
+                if (!this.audioContext) return;
+
+                const now = this.audioContext.currentTime;
+
+                const osc = this.audioContext.createOscillator();
+                const oscGain = this.audioContext.createGain();
+                const filter = this.audioContext.createBiquadFilter();
+
+                osc.connect(filter);
+                filter.connect(oscGain);
+                oscGain.connect(this.masterGain);
+
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+
+                filter.type = 'bandpass';
+                filter.frequency.value = 1200;
+                filter.Q.value = 5;
+
+                oscGain.gain.setValueAtTime(0.4, now);
+                oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+
+                osc.start(now);
+                osc.stop(now + 0.15);
+            }
+
+            createSequencerGrid() {
+                const grid = document.getElementById('sequencerGrid');
+                grid.innerHTML = '';
+
+                // Create grid with track labels and steps
+                this.tracks.forEach((track, trackIndex) => {
+                    // Track label
+                    const label = document.createElement('div');
+                    label.className = 'track-label';
+                    label.textContent = track.name;
+                    label.style.setProperty('--track-color', track.color);
+                    grid.appendChild(label);
+
+                    // Steps for this track
+                    for (let step = 0; step < this.steps; step++) {
+                        const stepElement = document.createElement('div');
+                        stepElement.className = 'step';
+                        stepElement.style.setProperty('--track-color', track.color);
+                        stepElement.dataset.track = trackIndex;
+                        stepElement.dataset.step = step;
+
+                        stepElement.addEventListener('click', () => {
+                            this.toggleStep(trackIndex, step);
+                        });
+
+                        grid.appendChild(stepElement);
+                    }
+                });
+            }
+
+            createGeoVisualization() {
+                const pattern = document.getElementById('geoPattern');
+                pattern.innerHTML = '';
+
+                for (let i = 0; i < 16 * 6; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'geo-cell';
+                    pattern.appendChild(cell);
+                }
+            }
+
+            setupEventListeners() {
+                // Geographic type selection
+                document.querySelectorAll('.geo-button').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        document.querySelectorAll('.geo-button').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                        this.currentGeoType = e.target.dataset.type;
+                        this.generatePattern();
+                    });
+                });
+
+                // Play button
+                document.getElementById('playButton').addEventListener('click', async () => {
+                    if (!this.isAudioInitialized) {
+                        await this.initializeAudio();
+                    }
+                    this.togglePlayback();
+                });
+
+                // Transport controls
+                document.getElementById('stopButton').addEventListener('click', () => {
+                    this.stop();
+                });
+
+                document.getElementById('clearButton').addEventListener('click', () => {
+                    this.clearPattern();
+                });
+
+                document.getElementById('randomButton').addEventListener('click', () => {
+                    this.generateRandomPattern();
+                });
+
+                // BPM slider
+                document.getElementById('bpm').addEventListener('input', (e) => {
+                    this.bpm = parseInt(e.target.value);
+                    this.updateBPMDisplay();
+                    if (this.isPlaying) {
+                        this.stop();
+                        this.play();
+                    }
+                });
+
+                // Other parameter sliders
+                document.getElementById('density').addEventListener('input', () => {
+                    this.generatePattern();
+                });
+
+                document.getElementById('sensitivity').addEventListener('input', () => {
+                    this.generatePattern();
+                });
+            }
+
+            generateInitialPattern() {
+                this.generatePattern();
+            }
+
+            generatePattern() {
+                const density = document.getElementById('density').value;
+                const sensitivity = document.getElementById('sensitivity').value / 100;
+
+                // Clear existing patterns
+                this.tracks.forEach(track => track.pattern = new Array(this.steps).fill(false));
+
+                // Generate geographic-based patterns
+                const patterns = this.getGeoPatterns(this.currentGeoType, sensitivity);
+
+                patterns.forEach((pattern, trackIndex) => {
+                    this.tracks[trackIndex].pattern = pattern;
+                });
+
+                this.updateSequencerDisplay();
+                this.updateGeoVisualization();
+                this.updateStatus();
+            }
+
+            getGeoPatterns(geoType, sensitivity) {
+                const patterns = [];
+
+                switch(geoType) {
+                    case 'urban':
+                        patterns.push(this.generateUrbanRoads(sensitivity));
+                        patterns.push(this.generateUrbanBuildings(sensitivity));
+                        patterns.push(this.generateUrbanWater(sensitivity));
+                        patterns.push(this.generateUrbanParks(sensitivity));
+                        break;
+                    case 'coastal':
+                        patterns.push(this.generateCoastalRoads(sensitivity));
+                        patterns.push(this.generateCoastalBuildings(sensitivity));
+                        patterns.push(this.generateCoastalWater(sensitivity));
+                        patterns.push(this.generateCoastalParks(sensitivity));
+                        break;
+                    case 'forest':
+                        patterns.push(this.generateForestRoads(sensitivity));
+                        patterns.push(this.generateForestBuildings(sensitivity));
+                        patterns.push(this.generateForestWater(sensitivity));
+                        patterns.push(this.generateForestParks(sensitivity));
+                        break;
+                    case 'suburban':
+                        patterns.push(this.generateSuburbanRoads(sensitivity));
+                        patterns.push(this.generateSuburbanBuildings(sensitivity));
+                        patterns.push(this.generateSuburbanWater(sensitivity));
+                        patterns.push(this.generateSuburbanParks(sensitivity));
+                        break;
+                }
+
+                return patterns;
+            }
+
+            generateUrbanRoads(sensitivity) {
+                // Dense, regular grid pattern for urban roads
+                return Array.from({length: 16}, (_, i) =>
+                    (i % 4 === 0 || i % 4 === 2) && Math.random() < sensitivity
+                );
+            }
+
+            generateUrbanBuildings(sensitivity) {
+                // Syncopated pattern for urban buildings
+                return Array.from({length: 16}, (_, i) =>
+                    (i % 4 === 1 || i % 8 === 6) && Math.random() < sensitivity
+                );
+            }
+
+            generateUrbanWater(sensitivity) {
+                // Sparse pattern for urban water features
+                return Array.from({length: 16}, (_, i) =>
+                    (i % 6 === 2 || i === 14) && Math.random() < sensitivity * 0.7
+                );
+            }
+
+            generateUrbanParks(sensitivity) {
+                // Irregular pattern for urban parks
+                return Array.from({length: 16}, (_, i) =>
+                    (i % 7 === 3 || i % 11 === 5) && Math.random() < sensitivity * 0.6
+                );
+            }
+
+            generateCoastalRoads(sensitivity) {
+                // Flowing pattern following coastline
+                return Array.from({length: 16}, (_, i) =>
+                    Math.sin(i * 0.5) > 0.3 && Math.random() < sensitivity
+                );
+            }
+
+            generateCoastalBuildings(sensitivity) {
+                // Clustered coastal development
+                return Array.from({length: 16}, (_, i) =>
+                    (i < 6 || i > 10) && Math.random() < sensitivity * 0.8
+                );
+            }
+
+            generateCoastalWater(sensitivity) {
+                // Prominent water presence
+                return Array.from({length: 16}, (_, i) =>
+                    (i % 3 === 0) && Math.random() < sensitivity
+                );
+            }
+
+            generateCoastalParks(sensitivity) {
+                // Beachfront parks
+                return Array.from({length: 16}, (_, i) =>
+                    (i % 8 === 4 || i % 12 === 8) && Math.random() < sensitivity * 0.7
+                );
+            }
+
+            generateForestRoads(sensitivity) {
+                // Winding forest roads
+                return Array.from({length: 16}, (_, i) =>
+                    (i % 6 === 0 || i % 9 === 4) && Math.random() < sensitivity * 0.6
+                );
+            }
+
+            generateForestBuildings(sensitivity) {
+                // Sparse forest buildings
+                return Array.from({length: 16}, (_, i) =>
+                    (i % 12 === 2 || i === 15) && Math.random() < sensitivity * 0.4
+                );
+            }
+
+            generateForestWater(sensitivity) {
+                // Natural water features
+                return Array.from({length: 16}, (_, i) =>
+                    (i % 5 === 2 || i % 7 === 4) && Math.random() < sensitivity * 0.8
+                );
+            }
+
+            generateForestParks(sensitivity) {
+                // Natural areas
+                return Array.from({length: 16}, (_, i) =>
+                    Math.random() < sensitivity * 0.9
+                );
+            }
+
+            generateSuburbanRoads(sensitivity) {
+                // Regular suburban grid
+                return Array.from({length: 16}, (_, i) =>
+                    (i % 4 === 0) && Math.random() < sensitivity * 0.8
+                );
+            }
+
+            generateSuburbanBuildings(sensitivity) {
+                // Regular suburban buildings
+                return Array.from({length: 16}, (_, i) =>
+                    (i % 2 === 1) && Math.random() < sensitivity * 0.7
+                );
+            }
+
+            generateSuburbanWater(sensitivity) {
+                // Occasional suburban water
+                return Array.from({length: 16}, (_, i) =>
+                    (i % 8 === 3) && Math.random() < sensitivity * 0.5
+                );
+            }
+
+            generateSuburbanParks(sensitivity) {
+                // Regular suburban parks
+                return Array.from({length: 16}, (_, i) =>
+                    (i % 6 === 4) && Math.random() < sensitivity * 0.8
+                );
+            }
+
+            generateRandomPattern() {
+                this.tracks.forEach(track => {
+                    track.pattern = Array.from({length: 16}, () => Math.random() < 0.3);
+                });
+                this.updateSequencerDisplay();
+                this.updateStatus('Random pattern generated');
+            }
+
+            updateSequencerDisplay() {
+                this.tracks.forEach((track, trackIndex) => {
+                    track.pattern.forEach((active, stepIndex) => {
+                        const stepElement = document.querySelector(`[data-track="${trackIndex}"][data-step="${stepIndex}"]`);
+                        if (stepElement) {
+                            stepElement.classList.toggle('active', active);
+                        }
+                    });
+                });
+            }
+
+            updateGeoVisualization() {
+                const cells = document.querySelectorAll('.geo-cell');
+                const types = ['road', 'building', 'water', 'park'];
+
+                cells.forEach((cell, index) => {
+                    cell.className = 'geo-cell';
+
+                    // Map sequencer patterns to geographic visualization
+                    const step = index % 16;
+                    const trackIndex = Math.floor(index / 16) % 4;
+
+                    if (trackIndex < this.tracks.length && this.tracks[trackIndex].pattern[step]) {
+                        cell.classList.add(types[trackIndex]);
+                    }
+                });
+            }
+
+            toggleStep(trackIndex, stepIndex) {
+                this.tracks[trackIndex].pattern[stepIndex] = !this.tracks[trackIndex].pattern[stepIndex];
+                this.updateSequencerDisplay();
+                this.updateGeoVisualization();
+
+                // Play a preview sound when clicking
+                if (this.isAudioInitialized && this.tracks[trackIndex].pattern[stepIndex]) {
+                    this.playTrackSound(trackIndex);
+                }
+            }
+
+            playTrackSound(trackIndex) {
+                switch(trackIndex) {
+                    case 0: this.playKick(); break;
+                    case 1: this.playSnare(); break;
+                    case 2: this.playHiHat(); break;
+                    case 3: this.playPerc(); break;
+                }
+            }
+
+            togglePlayback() {
+                if (this.isPlaying) {
+                    this.stop();
+                } else {
+                    this.play();
+                }
+            }
+
+            play() {
+                this.isPlaying = true;
+                document.getElementById('playButton').textContent = '⏸ Pause';
+
+                const interval = (60 / this.bpm / 4) * 1000; // 16th notes
+
+                this.playInterval = setInterval(() => {
+                    this.step();
+                }, interval);
+
+                this.updateStatus('Playing sequence...');
+            }
+
+            stop() {
+                this.isPlaying = false;
+                document.getElementById('playButton').textContent = '▶ Generate & Play';
+
+                if (this.playInterval) {
+                    clearInterval(this.playInterval);
+                    this.playInterval = null;
+                }
+
+                this.currentBeat = 0;
+                this.updateBeatDisplay();
+                this.updateStatus('Stopped');
+            }
+
+            step() {
+                // Remove previous beat highlighting
+                document.querySelectorAll('.current-beat').forEach(el => {
+                    el.classList.remove('current-beat');
+                });
+
+                // Highlight current beat and trigger active steps
+                this.tracks.forEach((track, trackIndex) => {
+                    const stepElement = document.querySelector(`[data-track="${trackIndex}"][data-step="${this.currentBeat}"]`);
+                    if (stepElement) {
+                        stepElement.classList.add('current-beat');
+
+                        if (track.pattern[this.currentBeat]) {
+                            stepElement.classList.add('playing');
+                            this.playTrackSound(trackIndex); // Play the actual sound!
+                            setTimeout(() => {
+                                stepElement.classList.remove('playing');
+                            }, 100);
+                        }
+                    }
+                });
+
+                this.currentBeat = (this.currentBeat + 1) % this.steps;
+            }
+
+            updateBeatDisplay() {
+                document.querySelectorAll('.current-beat').forEach(el => {
+                    el.classList.remove('current-beat');
+                });
+            }
+
+            clearPattern() {
+                this.tracks.forEach(track => {
+                    track.pattern.fill(false);
+                });
+                this.updateSequencerDisplay();
+                this.updateGeoVisualization();
+                this.updateStatus('Pattern cleared');
+            }
+
+            updateBPMDisplay() {
+                document.querySelector('.bpm-display').textContent = `${this.bpm} BPM`;
+            }
+
+            updateStatus(message = null) {
+                const statusBar = document.getElementById('statusBar');
+                if (message) {
+                    statusBar.textContent = message;
+                } else {
+                    const activeSteps = this.tracks.reduce((sum, track) =>
+                        sum + track.pattern.filter(step => step).length, 0
+                    );
+                    statusBar.textContent = `Geographic pattern mapped to ${activeSteps} active steps`;
+                }
+            }
+        }
+
+        // Initialize the interface when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new GeoS4Interface();
+        });
+    </script>
+</body>
+</html>
