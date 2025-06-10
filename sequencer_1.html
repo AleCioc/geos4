@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GeoS4: Geospatial Step Sequencer</title>
+    <title>GeoS4: GeoJSON Map Sequencer</title>
     <style>
         * {
             margin: 0;
@@ -16,86 +16,136 @@
             background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 50%, #16213e 100%);
             color: #e0e0e0;
             min-height: 100vh;
-            overflow-x: auto;
+            overflow: hidden;
         }
 
         .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
             text-align: center;
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(10px);
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(15px);
             border-bottom: 2px solid #00ff88;
         }
 
         .header h1 {
-            font-size: 2.5em;
+            font-size: 2em;
             color: #00ff88;
             text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
 
         .header p {
-            font-size: 1.1em;
+            font-size: 0.9em;
             color: #b0b0b0;
         }
 
         .main-container {
             display: flex;
-            gap: 20px;
-            padding: 20px;
-            max-width: 1400px;
-            margin: 0 auto;
+            height: 100vh;
+            padding-top: 80px;
         }
 
         .control-panel {
-            width: 300px;
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
+            width: 320px;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(15px);
+            border-right: 2px solid #333;
             padding: 20px;
-            border: 1px solid #333;
-            height: fit-content;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .map-sequencer-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .map-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1a1a2e;
+        }
+
+        .sequencer-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .sequencer-grid {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(16, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 2px;
+            padding: 20px;
+            pointer-events: auto;
+        }
+
+        .sequencer-cell {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            backdrop-filter: blur(5px);
+        }
+
+        .sequencer-cell:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #00ff88;
+        }
+
+        .sequencer-cell.active {
+            background: var(--track-color);
+            border-color: var(--track-color);
+            box-shadow: 0 0 15px var(--track-color);
+        }
+
+        .sequencer-cell.current-beat {
+            border: 3px solid #fff;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+        }
+
+        .sequencer-cell.playing {
+            animation: mapPulse 0.2s ease-in-out;
+        }
+
+        @keyframes mapPulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
         }
 
         .control-section {
-            margin-bottom: 25px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border: 1px solid #333;
         }
 
         .control-section h3 {
             color: #00ff88;
             margin-bottom: 10px;
-            font-size: 1.1em;
+            font-size: 1em;
             border-bottom: 1px solid #333;
             padding-bottom: 5px;
-        }
-
-        .geo-selector {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .geo-button {
-            padding: 8px 12px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid #555;
-            border-radius: 8px;
-            color: #e0e0e0;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.9em;
-        }
-
-        .geo-button:hover {
-            background: rgba(0, 255, 136, 0.2);
-            border-color: #00ff88;
-        }
-
-        .geo-button.active {
-            background: rgba(0, 255, 136, 0.3);
-            border-color: #00ff88;
-            color: #00ff88;
         }
 
         .slider-container {
@@ -128,139 +178,142 @@
             box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
         }
 
-        .play-button {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(45deg, #00ff88, #00cc6a);
-            border: none;
-            border-radius: 10px;
-            color: #000;
-            font-size: 1.1em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
+        .transport-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
             margin-top: 15px;
         }
 
-        .play-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.4);
+        .transport-btn {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #555;
+            border-radius: 6px;
+            color: #e0e0e0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
         }
 
-        .sequencer-container {
-            flex: 1;
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 20px;
-            border: 1px solid #333;
+        .transport-btn:hover {
+            background: rgba(0, 255, 136, 0.2);
+            border-color: #00ff88;
         }
 
-        .sequencer-header {
+        .transport-btn.play {
+            background: linear-gradient(45deg, #00ff88, #00cc6a);
+            color: #000;
+            font-weight: bold;
+        }
+
+        .status-display {
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            font-size: 0.9em;
+            color: #b0b0b0;
+            margin-top: 10px;
+        }
+
+        .track-info {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .bpm-display {
-            font-size: 1.2em;
-            color: #00ff88;
-        }
-
-        .sequencer-grid {
-            display: grid;
-            grid-template-columns: 120px repeat(16, 1fr);
-            gap: 2px;
-            margin-bottom: 20px;
-        }
-
-        .track-label {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            padding: 8px;
+            margin: 5px 0;
+            padding: 5px;
             background: rgba(255, 255, 255, 0.05);
             border-radius: 5px;
-            font-size: 0.9em;
             border-left: 3px solid var(--track-color);
         }
 
-        .step {
-            aspect-ratio: 1;
-            border: 1px solid #333;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            position: relative;
-            background: rgba(255, 255, 255, 0.05);
+        .track-info span {
+            font-size: 0.8em;
         }
 
-        .step.active {
-            background: var(--track-color);
-            box-shadow: 0 0 10px var(--track-color);
-            border-color: var(--track-color);
-        }
-
-        .step.playing {
-            animation: pulse 0.1s ease-in-out;
-        }
-
-        .step.current-beat {
-            border: 2px solid #fff;
-            border-radius: 6px;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
-        }
-
-        .geo-visualization {
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-            border: 1px solid #333;
-        }
-
-        .geo-viz-title {
+        .bpm-display {
+            text-align: center;
+            font-size: 1.1em;
             color: #00ff88;
-            margin-bottom: 10px;
-            font-size: 1em;
+            margin: 10px 0;
         }
 
-        .geo-pattern {
-            display: grid;
-            grid-template-columns: repeat(16, 1fr);
-            gap: 1px;
-            height: 100px;
-            margin-bottom: 10px;
+        .point-marker {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: #fff;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+            z-index: 40;
+            pointer-events: none;
         }
 
-        .geo-cell {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 2px;
-            transition: all 0.3s ease;
+        .point-marker.highlighted {
+            width: 10px;
+            height: 10px;
+            background: #ff4444;
+            box-shadow: 0 0 15px rgba(255, 68, 68, 1);
+            animation: pointPulse 0.3s ease-in-out;
         }
 
-        .geo-cell.road { background: #ff6b6b; }
-        .geo-cell.building { background: #4ecdc4; }
-        .geo-cell.water { background: #45b7d1; }
-        .geo-cell.park { background: #96ceb4; }
+        @keyframes pointPulse {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.5); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .grid-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 30;
+        }
+
+        .grid-line-v {
+            position: absolute;
+            width: 1px;
+            height: 100%;
+            background: rgba(0, 255, 136, 0.3);
+            top: 0;
+        }
+
+        .grid-line-h {
+            position: absolute;
+            height: 1px;
+            width: 100%;
+            background: rgba(0, 255, 136, 0.3);
+            left: 0;
+        }
 
         .legend {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            font-size: 0.8em;
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #333;
+            z-index: 200;
+        }
+
+        .legend h4 {
+            color: #00ff88;
+            margin-bottom: 10px;
+            font-size: 0.9em;
         }
 
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px;
+            margin: 5px 0;
+            font-size: 0.8em;
         }
 
         .legend-color {
@@ -269,165 +322,261 @@
             border-radius: 2px;
         }
 
-        .transport-controls {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin-top: 15px;
-        }
-
-        .transport-btn {
-            padding: 8px 12px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid #555;
-            border-radius: 6px;
-            color: #e0e0e0;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .transport-btn:hover {
+        .data-indicator {
             background: rgba(0, 255, 136, 0.2);
-            border-color: #00ff88;
-        }
-
-        .status-bar {
+            border: 1px solid #00ff88;
+            padding: 8px;
+            border-radius: 5px;
+            font-size: 0.8em;
             text-align: center;
-            margin-top: 15px;
-            padding: 10px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
-            font-size: 0.9em;
-            color: #b0b0b0;
+            margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>GeoS4</h1>
-        <p>Algorithmic Pattern-Making Through Spatial Sonification</p>
+        <h1>GeoS4: GeoJSON Map Sequencer</h1>
+        <p>Real-time geographic data visualization and sequencing</p>
     </div>
 
     <div class="main-container">
         <div class="control-panel">
             <div class="control-section">
-                <h3>Geographic Data</h3>
-                <div class="geo-selector">
-                    <button class="geo-button active" data-type="urban">Urban</button>
-                    <button class="geo-button" data-type="coastal">Coastal</button>
-                    <button class="geo-button" data-type="forest">Forest</button>
-                    <button class="geo-button" data-type="suburban">Suburban</button>
+                <h3>Data Input</h3>
+                <div class="data-indicator" id="dataIndicator">
+                    💾 Direct data embedding active
+                </div>
+                <div class="status-display" id="dataStatus">Waiting for data...</div>
+            </div>
+
+            <div class="control-section">
+                <h3>Mapping Parameters</h3>
+                <div class="slider-container">
+                    <label>Point Influence Radius</label>
+                    <input type="range" class="slider" id="influenceRadius" min="1" max="50" value="15">
+                </div>
+                <div class="slider-container">
+                    <label>Density Threshold</label>
+                    <input type="range" class="slider" id="densityThreshold" min="1" max="10" value="3">
+                </div>
+                <div class="slider-container">
+                    <label>Grid Opacity</label>
+                    <input type="range" class="slider" id="gridOpacity" min="0" max="100" value="70">
                 </div>
             </div>
 
             <div class="control-section">
-                <h3>Spatial Parameters</h3>
-                <div class="slider-container">
-                    <label>Grid Density</label>
-                    <input type="range" class="slider" id="density" min="8" max="32" value="16">
-                </div>
-                <div class="slider-container">
-                    <label>Feature Sensitivity</label>
-                    <input type="range" class="slider" id="sensitivity" min="0" max="100" value="70">
-                </div>
-                <div class="slider-container">
-                    <label>Temporal Scale</label>
-                    <input type="range" class="slider" id="scale" min="50" max="200" value="120">
-                </div>
-            </div>
-
-            <div class="control-section">
-                <h3>Musical Parameters</h3>
+                <h3>Musical Control</h3>
                 <div class="slider-container">
                     <label>BPM</label>
                     <input type="range" class="slider" id="bpm" min="60" max="180" value="120">
                 </div>
-                <div class="slider-container">
-                    <label>Swing</label>
-                    <input type="range" class="slider" id="swing" min="0" max="100" value="0">
+                <div class="bpm-display">120 BPM</div>
+
+                <div class="transport-controls">
+                    <button class="transport-btn play" id="playButton">▶ Play</button>
+                    <button class="transport-btn" id="stopButton">⏹ Stop</button>
+                    <button class="transport-btn" id="clearButton">🗑 Clear</button>
+                    <button class="transport-btn" id="regenerateButton">🔄 Regen</button>
                 </div>
             </div>
 
-            <button class="play-button" id="playButton">▶ Generate & Play</button>
+            <div class="control-section">
+                <h3>Track Info</h3>
+                <div class="track-info" style="--track-color: #ff6b6b;">
+                    <span>Density (Kick)</span>
+                    <span id="track0Count">0</span>
+                </div>
+                <div class="track-info" style="--track-color: #4ecdc4;">
+                    <span>Clusters (Snare)</span>
+                    <span id="track1Count">0</span>
+                </div>
+                <div class="track-info" style="--track-color: #45b7d1;">
+                    <span>Edges (HiHat)</span>
+                    <span id="track2Count">0</span>
+                </div>
+                <div class="track-info" style="--track-color: #96ceb4;">
+                    <span>Outliers (Perc)</span>
+                    <span id="track3Count">0</span>
+                </div>
+            </div>
         </div>
 
-        <div class="sequencer-container">
-            <div class="sequencer-header">
-                <h3>Step Sequencer Grid</h3>
-                <div class="bpm-display">120 BPM</div>
+        <div class="map-sequencer-container">
+            <canvas class="map-canvas" id="mapCanvas"></canvas>
+
+            <div class="grid-lines" id="gridLines"></div>
+
+            <div class="sequencer-overlay">
+                <div class="sequencer-grid" id="sequencerGrid"></div>
             </div>
 
-            <div class="sequencer-grid" id="sequencerGrid">
-                <!-- Grid will be generated by JavaScript -->
-            </div>
-
-            <div class="geo-visualization">
-                <div class="geo-viz-title">Geographic Pattern Mapping</div>
-                <div class="geo-pattern" id="geoPattern">
-                    <!-- Geographic visualization -->
+            <div class="legend">
+                <h4>Sequencer Tracks</h4>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff6b6b;"></div>
+                    <span>Track 1: Point Density</span>
                 </div>
-                <div class="legend">
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #ff6b6b;"></div>
-                        <span>Roads</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #4ecdc4;"></div>
-                        <span>Buildings</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #45b7d1;"></div>
-                        <span>Water</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #96ceb4;"></div>
-                        <span>Parks</span>
-                    </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #4ecdc4;"></div>
+                    <span>Track 2: Spatial Clusters</span>
                 </div>
-            </div>
-
-            <div class="transport-controls">
-                <button class="transport-btn" id="stopButton">⏹ Stop</button>
-                <button class="transport-btn" id="clearButton">🗑 Clear</button>
-                <button class="transport-btn" id="randomButton">🎲 Randomize</button>
-            </div>
-
-            <div class="status-bar" id="statusBar">
-                Select geographic data type and adjust parameters to generate musical patterns
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #45b7d1;"></div>
+                    <span>Track 3: Boundary Effects</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #96ceb4;"></div>
+                    <span>Track 4: Spatial Outliers</span>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        class GeoS4Interface {
+        // PYTHON_DATA_INJECTION_POINT
+
+        class GeoJSONSequencer {
             constructor() {
+                this.geoData = null;
+                this.bounds = null;
+                this.canvas = document.getElementById('mapCanvas');
+                this.ctx = this.canvas.getContext('2d');
                 this.isPlaying = false;
                 this.currentBeat = 0;
                 this.bpm = 120;
-                this.tracks = [
-                    { name: 'Roads (Kick)', color: '#ff6b6b', pattern: [] },
-                    { name: 'Buildings (Snare)', color: '#4ecdc4', pattern: [] },
-                    { name: 'Water (HiHat)', color: '#45b7d1', pattern: [] },
-                    { name: 'Parks (Perc)', color: '#96ceb4', pattern: [] }
-                ];
-                this.steps = 16;
                 this.playInterval = null;
-                this.currentGeoType = 'urban';
 
-                // Audio context and nodes
+                // Grid and sequencer setup
+                this.gridCols = 16;
+                this.gridRows = 4;
+                this.tracks = [
+                    { name: 'Density', color: '#ff6b6b', pattern: new Array(16).fill(false) },
+                    { name: 'Clusters', color: '#4ecdc4', pattern: new Array(16).fill(false) },
+                    { name: 'Edges', color: '#45b7d1', pattern: new Array(16).fill(false) },
+                    { name: 'Outliers', color: '#96ceb4', pattern: new Array(16).fill(false) }
+                ];
+
+                // Audio setup
                 this.audioContext = null;
                 this.masterGain = null;
                 this.isAudioInitialized = false;
 
-                this.initializeInterface();
                 this.setupEventListeners();
-                this.generateInitialPattern();
+                this.resizeCanvas();
+                this.createSequencerGrid();
+                this.createGridLines();
+
+                // Apply injected settings from Python and load data
+                this.applyInjectedSettings();
+
+                window.addEventListener('resize', () => this.resizeCanvas());
             }
 
-            initializeInterface() {
-                this.createSequencerGrid();
-                this.createGeoVisualization();
-                this.updateBPMDisplay();
+            applyInjectedSettings() {
+                // Apply Python-injected settings if they exist
+                if (typeof BPM !== 'undefined') {
+                    this.bpm = BPM;
+                    document.getElementById('bpm').value = BPM;
+                    document.querySelector('.bpm-display').textContent = `${BPM} BPM`;
+                }
+
+                if (typeof IS_PLAYING !== 'undefined' && IS_PLAYING) {
+                    // Don't auto-start playing, but prepare for it
+                    this.updateDataStatus('Ready to play with injected data');
+                }
+
+                // Load pre-computed sequencer grid from Python
+                if (typeof SEQUENCER_GRID !== 'undefined') {
+                    for (let row = 0; row < this.gridRows && row < SEQUENCER_GRID.length; row++) {
+                        for (let col = 0; col < this.gridCols && col < SEQUENCER_GRID[row].length; col++) {
+                            this.tracks[row].pattern[col] = SEQUENCER_GRID[row][col];
+                        }
+                    }
+                    this.updateSequencerDisplay();
+                    this.updateTrackCounts();
+                }
+
+                // Load GeoJSON data directly from Python injection
+                if (typeof GEOJSON_DATA !== 'undefined' && GEOJSON_DATA) {
+                    this.loadGeoJSONData(GEOJSON_DATA);
+                } else {
+                    this.updateDataStatus('No geographic data provided');
+                }
+            }
+
+            loadGeoJSONData(geoJsonData) {
+                try {
+                    if (!geoJsonData.features || geoJsonData.features.length === 0) {
+                        throw new Error('No features found in GeoJSON');
+                    }
+
+                    // Filter for point features only
+                    geoJsonData.features = geoJsonData.features.filter(
+                        feature => feature.geometry && feature.geometry.type === 'Point'
+                    );
+
+                    if (geoJsonData.features.length === 0) {
+                        throw new Error('No point features found in GeoJSON');
+                    }
+
+                    this.geoData = geoJsonData;
+                    this.calculateBounds();
+                    this.drawMap();
+                    this.generateSequenceFromGeoData();
+
+                    this.updateDataStatus(`✅ Loaded ${this.geoData.features.length} points`);
+
+                } catch (error) {
+                    console.error('Error loading GeoJSON:', error);
+                    this.updateDataStatus(`❌ Error: ${error.message}`);
+                }
+            }
+
+            setupEventListeners() {
+                // Parameter sliders
+                document.getElementById('influenceRadius').addEventListener('input', () => {
+                    if (this.geoData) this.generateSequenceFromGeoData();
+                });
+
+                document.getElementById('densityThreshold').addEventListener('input', () => {
+                    if (this.geoData) this.generateSequenceFromGeoData();
+                });
+
+                document.getElementById('gridOpacity').addEventListener('input', (e) => {
+                    const opacity = e.target.value / 100;
+                    document.querySelector('.sequencer-overlay').style.opacity = opacity;
+                });
+
+                // BPM control
+                document.getElementById('bpm').addEventListener('input', (e) => {
+                    this.bpm = parseInt(e.target.value);
+                    document.querySelector('.bpm-display').textContent = `${this.bpm} BPM`;
+                    if (this.isPlaying) {
+                        this.stop();
+                        this.play();
+                    }
+                });
+
+                // Transport controls
+                document.getElementById('playButton').addEventListener('click', async () => {
+                    if (!this.isAudioInitialized) {
+                        await this.initializeAudio();
+                    }
+                    this.togglePlayback();
+                });
+
+                document.getElementById('stopButton').addEventListener('click', () => {
+                    this.stop();
+                });
+
+                document.getElementById('clearButton').addEventListener('click', () => {
+                    this.clearPattern();
+                });
+
+                document.getElementById('regenerateButton').addEventListener('click', () => {
+                    if (this.geoData) this.generateSequenceFromGeoData();
+                });
             }
 
             async initializeAudio() {
@@ -439,14 +588,392 @@
                     this.masterGain.connect(this.audioContext.destination);
                     this.masterGain.gain.value = 0.7;
                     this.isAudioInitialized = true;
-                    this.updateStatus('Audio initialized - ready to play!');
+                    this.updateDataStatus('🔊 Audio initialized - ready to play!');
                 } catch (error) {
                     console.error('Failed to initialize audio:', error);
-                    this.updateStatus('Audio initialization failed');
+                    this.updateDataStatus('❌ Audio initialization failed');
                 }
             }
 
-            // Kick drum synthesis (Roads)
+            resizeCanvas() {
+                const container = this.canvas.parentElement;
+                this.canvas.width = container.clientWidth;
+                this.canvas.height = container.clientHeight;
+
+                if (this.geoData) {
+                    this.drawMap();
+                }
+            }
+
+            createSequencerGrid() {
+                const grid = document.getElementById('sequencerGrid');
+                grid.innerHTML = '';
+
+                for (let row = 0; row < this.gridRows; row++) {
+                    for (let col = 0; col < this.gridCols; col++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'sequencer-cell';
+                        cell.style.setProperty('--track-color', this.tracks[row].color);
+                        cell.dataset.track = row;
+                        cell.dataset.step = col;
+
+                        cell.addEventListener('click', () => {
+                            this.toggleStep(row, col);
+                        });
+
+                        grid.appendChild(cell);
+                    }
+                }
+            }
+
+            createGridLines() {
+                const gridLines = document.getElementById('gridLines');
+                gridLines.innerHTML = '';
+
+                // Vertical lines
+                for (let i = 1; i < this.gridCols; i++) {
+                    const line = document.createElement('div');
+                    line.className = 'grid-line-v';
+                    line.style.left = `${(i / this.gridCols) * 100}%`;
+                    gridLines.appendChild(line);
+                }
+
+                // Horizontal lines
+                for (let i = 1; i < this.gridRows; i++) {
+                    const line = document.createElement('div');
+                    line.className = 'grid-line-h';
+                    line.style.top = `${(i / this.gridRows) * 100}%`;
+                    gridLines.appendChild(line);
+                }
+            }
+
+            calculateBounds() {
+                if (!this.geoData || !this.geoData.features.length) return;
+
+                let minLng = Infinity, maxLng = -Infinity;
+                let minLat = Infinity, maxLat = -Infinity;
+
+                this.geoData.features.forEach(feature => {
+                    const [lng, lat] = feature.geometry.coordinates;
+                    minLng = Math.min(minLng, lng);
+                    maxLng = Math.max(maxLng, lng);
+                    minLat = Math.min(minLat, lat);
+                    maxLat = Math.max(maxLat, lat);
+                });
+
+                // Add padding
+                const lngPadding = (maxLng - minLng) * 0.1;
+                const latPadding = (maxLat - minLat) * 0.1;
+
+                this.bounds = {
+                    minLng: minLng - lngPadding,
+                    maxLng: maxLng + lngPadding,
+                    minLat: minLat - latPadding,
+                    maxLat: maxLat + latPadding
+                };
+            }
+
+            drawMap() {
+                if (!this.geoData || !this.bounds) return;
+
+                const { width, height } = this.canvas;
+                this.ctx.clearRect(0, 0, width, height);
+
+                // Draw background
+                this.ctx.fillStyle = '#1a1a2e';
+                this.ctx.fillRect(0, 0, width, height);
+
+                // Draw points
+                this.geoData.features.forEach(feature => {
+                    const [lng, lat] = feature.geometry.coordinates;
+                    const { x, y } = this.coordsToPixel(lng, lat);
+
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, y, 3, 0, 2 * Math.PI);
+                    this.ctx.fillStyle = '#ffffff';
+                    this.ctx.fill();
+                    this.ctx.strokeStyle = '#00ff88';
+                    this.ctx.lineWidth = 1;
+                    this.ctx.stroke();
+                });
+            }
+
+            coordsToPixel(lng, lat) {
+                const { width, height } = this.canvas;
+                const { minLng, maxLng, minLat, maxLat } = this.bounds;
+
+                const x = ((lng - minLng) / (maxLng - minLng)) * width;
+                const y = height - ((lat - minLat) / (maxLat - minLat)) * height;
+
+                return { x, y };
+            }
+
+            generateSequenceFromGeoData() {
+                if (!this.geoData || !this.bounds) return;
+
+                const influenceRadius = document.getElementById('influenceRadius').value;
+                const densityThreshold = document.getElementById('densityThreshold').value;
+
+                // Reset patterns
+                this.tracks.forEach(track => track.pattern.fill(false));
+
+                // Calculate grid cell dimensions
+                const { width, height } = this.canvas;
+                const cellWidth = width / this.gridCols;
+                const cellHeight = height / this.gridRows;
+
+                // For each grid column (time step)
+                for (let col = 0; col < this.gridCols; col++) {
+                    const cellCenterX = (col + 0.5) * cellWidth;
+
+                    // Track 1: Point Density (Kick)
+                    let pointsInColumn = 0;
+                    this.geoData.features.forEach(feature => {
+                        const [lng, lat] = feature.geometry.coordinates;
+                        const { x } = this.coordsToPixel(lng, lat);
+                        if (Math.abs(x - cellCenterX) < cellWidth / 2 + parseInt(influenceRadius)) {
+                            pointsInColumn++;
+                        }
+                    });
+
+                    if (pointsInColumn >= parseInt(densityThreshold)) {
+                        this.tracks[0].pattern[col] = true;
+                    }
+
+                    // Track 2: Spatial Clusters (Snare) - look for clustered points
+                    let clusterScore = 0;
+                    this.geoData.features.forEach(feature => {
+                        const [lng, lat] = feature.geometry.coordinates;
+                        const { x, y } = this.coordsToPixel(lng, lat);
+                        if (Math.abs(x - cellCenterX) < cellWidth / 2) {
+                            // Count nearby points
+                            let nearbyCount = 0;
+                            this.geoData.features.forEach(otherFeature => {
+                                const [otherLng, otherLat] = otherFeature.geometry.coordinates;
+                                const { x: otherX, y: otherY } = this.coordsToPixel(otherLng, otherLat);
+                                const distance = Math.sqrt(Math.pow(x - otherX, 2) + Math.pow(y - otherY, 2));
+                                if (distance < parseInt(influenceRadius) && distance > 0) {
+                                    nearbyCount++;
+                                }
+                            });
+                            clusterScore += nearbyCount;
+                        }
+                    });
+
+                    if (clusterScore > parseInt(densityThreshold) * 2) {
+                        this.tracks[1].pattern[col] = true;
+                    }
+
+                    // Track 3: Boundary Effects (HiHat) - points near edges
+                    let edgePoints = 0;
+                    this.geoData.features.forEach(feature => {
+                        const [lng, lat] = feature.geometry.coordinates;
+                        const { x, y } = this.coordsToPixel(lng, lat);
+                        if (Math.abs(x - cellCenterX) < cellWidth / 2) {
+                            // Check if point is near bounds
+                            const { minLng, maxLng, minLat, maxLat } = this.bounds;
+                            const lngRange = maxLng - minLng;
+                            const latRange = maxLat - minLat;
+                            const edgeThreshold = 0.1; // 10% from edge
+
+                            if (lng < minLng + lngRange * edgeThreshold ||
+                                lng > maxLng - lngRange * edgeThreshold ||
+                                lat < minLat + latRange * edgeThreshold ||
+                                lat > maxLat - latRange * edgeThreshold) {
+                                edgePoints++;
+                            }
+                        }
+                    });
+
+                    if (edgePoints > 0) {
+                        this.tracks[2].pattern[col] = true;
+                    }
+
+                    // Track 4: Spatial Outliers (Percussion) - isolated points
+                    let outlierCount = 0;
+                    this.geoData.features.forEach(feature => {
+                        const [lng, lat] = feature.geometry.coordinates;
+                        const { x, y } = this.coordsToPixel(lng, lat);
+                        if (Math.abs(x - cellCenterX) < cellWidth / 2) {
+                            // Check if point is isolated
+                            let nearbyCount = 0;
+                            this.geoData.features.forEach(otherFeature => {
+                                const [otherLng, otherLat] = otherFeature.geometry.coordinates;
+                                const { x: otherX, y: otherY } = this.coordsToPixel(otherLng, otherLat);
+                                const distance = Math.sqrt(Math.pow(x - otherX, 2) + Math.pow(y - otherY, 2));
+                                if (distance < parseInt(influenceRadius) * 2 && distance > 0) {
+                                    nearbyCount++;
+                                }
+                            });
+                            if (nearbyCount === 0) {
+                                outlierCount++;
+                            }
+                        }
+                    });
+
+                    if (outlierCount > 0) {
+                        this.tracks[3].pattern[col] = true;
+                    }
+                }
+
+                this.updateSequencerDisplay();
+                this.updateTrackCounts();
+            }
+
+            updateSequencerDisplay() {
+                this.tracks.forEach((track, trackIndex) => {
+                    track.pattern.forEach((active, stepIndex) => {
+                        const cell = document.querySelector(`[data-track="${trackIndex}"][data-step="${stepIndex}"]`);
+                        if (cell) {
+                            cell.classList.toggle('active', active);
+                        }
+                    });
+                });
+            }
+
+            updateTrackCounts() {
+                this.tracks.forEach((track, index) => {
+                    const count = track.pattern.filter(step => step).length;
+                    document.getElementById(`track${index}Count`).textContent = count;
+                });
+            }
+
+            toggleStep(trackIndex, stepIndex) {
+                this.tracks[trackIndex].pattern[stepIndex] = !this.tracks[trackIndex].pattern[stepIndex];
+                this.updateSequencerDisplay();
+                this.updateTrackCounts();
+
+                // Play preview sound
+                if (this.isAudioInitialized && this.tracks[trackIndex].pattern[stepIndex]) {
+                    this.playTrackSound(trackIndex);
+                }
+            }
+
+            togglePlayback() {
+                if (this.isPlaying) {
+                    this.stop();
+                } else {
+                    this.play();
+                }
+            }
+
+            play() {
+                if (!this.geoData) {
+                    this.updateDataStatus('📡 Load GeoJSON data first!');
+                    return;
+                }
+
+                this.isPlaying = true;
+                document.getElementById('playButton').textContent = '⏸ Pause';
+
+                const interval = (60 / this.bpm / 4) * 1000; // 16th notes
+
+                this.playInterval = setInterval(() => {
+                    this.step();
+                }, interval);
+
+                this.updateDataStatus('🎵 Playing sequence...');
+            }
+
+            stop() {
+                this.isPlaying = false;
+                document.getElementById('playButton').textContent = '▶ Play';
+
+                if (this.playInterval) {
+                    clearInterval(this.playInterval);
+                    this.playInterval = null;
+                }
+
+                this.currentBeat = 0;
+                this.clearBeatHighlights();
+                this.updateDataStatus('⏹ Stopped');
+            }
+
+            step() {
+                // Clear previous highlights
+                this.clearBeatHighlights();
+
+                // Highlight current beat column and trigger sounds
+                this.tracks.forEach((track, trackIndex) => {
+                    const cell = document.querySelector(`[data-track="${trackIndex}"][data-step="${this.currentBeat}"]`);
+                    if (cell) {
+                        cell.classList.add('current-beat');
+
+                        if (track.pattern[this.currentBeat]) {
+                            cell.classList.add('playing');
+                            this.playTrackSound(trackIndex);
+                            this.highlightRelevantPoints(trackIndex);
+
+                            setTimeout(() => {
+                                cell.classList.remove('playing');
+                            }, 100);
+                        }
+                    }
+                });
+
+                this.currentBeat = (this.currentBeat + 1) % this.gridCols;
+            }
+
+            highlightRelevantPoints(trackIndex) {
+                if (!this.geoData) return;
+
+                // Remove existing highlights
+                document.querySelectorAll('.point-marker').forEach(marker => marker.remove());
+
+                const { width } = this.canvas;
+                const cellWidth = width / this.gridCols;
+                const cellCenterX = (this.currentBeat + 0.5) * cellWidth;
+
+                // Add point markers for current beat column
+                this.geoData.features.forEach(feature => {
+                    const [lng, lat] = feature.geometry.coordinates;
+                    const { x, y } = this.coordsToPixel(lng, lat);
+
+                    if (Math.abs(x - cellCenterX) < cellWidth / 2) {
+                        const marker = document.createElement('div');
+                        marker.className = 'point-marker highlighted';
+                        marker.style.left = `${x}px`;
+                        marker.style.top = `${y}px`;
+                        this.canvas.parentElement.appendChild(marker);
+
+                        // Remove highlight after animation
+                        setTimeout(() => {
+                            if (marker.parentElement) {
+                                marker.remove();
+                            }
+                        }, 300);
+                    }
+                });
+            }
+
+            clearBeatHighlights() {
+                document.querySelectorAll('.current-beat').forEach(el => {
+                    el.classList.remove('current-beat');
+                });
+                document.querySelectorAll('.point-marker').forEach(marker => marker.remove());
+            }
+
+            clearPattern() {
+                this.tracks.forEach(track => track.pattern.fill(false));
+                this.updateSequencerDisplay();
+                this.updateTrackCounts();
+                this.updateDataStatus('🗑 Pattern cleared');
+            }
+
+            updateDataStatus(message) {
+                document.getElementById('dataStatus').textContent = message;
+            }
+
+            // Audio synthesis methods
+            playTrackSound(trackIndex) {
+                switch(trackIndex) {
+                    case 0: this.playKick(); break;
+                    case 1: this.playSnare(); break;
+                    case 2: this.playHiHat(); break;
+                    case 3: this.playPerc(); break;
+                }
+            }
+
             playKick() {
                 if (!this.audioContext) return;
 
@@ -495,7 +1022,6 @@
                 noise.start(now);
             }
 
-            // Snare drum synthesis (Buildings)
             playSnare() {
                 if (!this.audioContext) return;
 
@@ -543,7 +1069,6 @@
                 noise.start(now);
             }
 
-            // Hi-hat synthesis (Water)
             playHiHat() {
                 if (!this.audioContext) return;
 
@@ -575,7 +1100,6 @@
                 noise.start(now);
             }
 
-            // Percussion synthesis (Parks)
             playPerc() {
                 if (!this.audioContext) return;
 
@@ -603,418 +1127,27 @@
                 osc.stop(now + 0.15);
             }
 
-            createSequencerGrid() {
-                const grid = document.getElementById('sequencerGrid');
-                grid.innerHTML = '';
-
-                // Create grid with track labels and steps
-                this.tracks.forEach((track, trackIndex) => {
-                    // Track label
-                    const label = document.createElement('div');
-                    label.className = 'track-label';
-                    label.textContent = track.name;
-                    label.style.setProperty('--track-color', track.color);
-                    grid.appendChild(label);
-
-                    // Steps for this track
-                    for (let step = 0; step < this.steps; step++) {
-                        const stepElement = document.createElement('div');
-                        stepElement.className = 'step';
-                        stepElement.style.setProperty('--track-color', track.color);
-                        stepElement.dataset.track = trackIndex;
-                        stepElement.dataset.step = step;
-
-                        stepElement.addEventListener('click', () => {
-                            this.toggleStep(trackIndex, step);
-                        });
-
-                        grid.appendChild(stepElement);
-                    }
-                });
-            }
-
-            createGeoVisualization() {
-                const pattern = document.getElementById('geoPattern');
-                pattern.innerHTML = '';
-
-                for (let i = 0; i < 16 * 6; i++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'geo-cell';
-                    pattern.appendChild(cell);
-                }
-            }
-
-            setupEventListeners() {
-                // Geographic type selection
-                document.querySelectorAll('.geo-button').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        document.querySelectorAll('.geo-button').forEach(b => b.classList.remove('active'));
-                        e.target.classList.add('active');
-                        this.currentGeoType = e.target.dataset.type;
-                        this.generatePattern();
-                    });
-                });
-
-                // Play button
-                document.getElementById('playButton').addEventListener('click', async () => {
-                    if (!this.isAudioInitialized) {
-                        await this.initializeAudio();
-                    }
-                    this.togglePlayback();
-                });
-
-                // Transport controls
-                document.getElementById('stopButton').addEventListener('click', () => {
-                    this.stop();
-                });
-
-                document.getElementById('clearButton').addEventListener('click', () => {
-                    this.clearPattern();
-                });
-
-                document.getElementById('randomButton').addEventListener('click', () => {
-                    this.generateRandomPattern();
-                });
-
-                // BPM slider
-                document.getElementById('bpm').addEventListener('input', (e) => {
-                    this.bpm = parseInt(e.target.value);
-                    this.updateBPMDisplay();
-                    if (this.isPlaying) {
-                        this.stop();
-                        this.play();
-                    }
-                });
-
-                // Other parameter sliders
-                document.getElementById('density').addEventListener('input', () => {
-                    this.generatePattern();
-                });
-
-                document.getElementById('sensitivity').addEventListener('input', () => {
-                    this.generatePattern();
-                });
-            }
-
-            generateInitialPattern() {
-                this.generatePattern();
-            }
-
-            generatePattern() {
-                const density = document.getElementById('density').value;
-                const sensitivity = document.getElementById('sensitivity').value / 100;
-
-                // Clear existing patterns
-                this.tracks.forEach(track => track.pattern = new Array(this.steps).fill(false));
-
-                // Generate geographic-based patterns
-                const patterns = this.getGeoPatterns(this.currentGeoType, sensitivity);
-
-                patterns.forEach((pattern, trackIndex) => {
-                    this.tracks[trackIndex].pattern = pattern;
-                });
-
-                this.updateSequencerDisplay();
-                this.updateGeoVisualization();
-                this.updateStatus();
-            }
-
-            getGeoPatterns(geoType, sensitivity) {
-                const patterns = [];
-
-                switch(geoType) {
-                    case 'urban':
-                        patterns.push(this.generateUrbanRoads(sensitivity));
-                        patterns.push(this.generateUrbanBuildings(sensitivity));
-                        patterns.push(this.generateUrbanWater(sensitivity));
-                        patterns.push(this.generateUrbanParks(sensitivity));
-                        break;
-                    case 'coastal':
-                        patterns.push(this.generateCoastalRoads(sensitivity));
-                        patterns.push(this.generateCoastalBuildings(sensitivity));
-                        patterns.push(this.generateCoastalWater(sensitivity));
-                        patterns.push(this.generateCoastalParks(sensitivity));
-                        break;
-                    case 'forest':
-                        patterns.push(this.generateForestRoads(sensitivity));
-                        patterns.push(this.generateForestBuildings(sensitivity));
-                        patterns.push(this.generateForestWater(sensitivity));
-                        patterns.push(this.generateForestParks(sensitivity));
-                        break;
-                    case 'suburban':
-                        patterns.push(this.generateSuburbanRoads(sensitivity));
-                        patterns.push(this.generateSuburbanBuildings(sensitivity));
-                        patterns.push(this.generateSuburbanWater(sensitivity));
-                        patterns.push(this.generateSuburbanParks(sensitivity));
-                        break;
-                }
-
-                return patterns;
-            }
-
-            generateUrbanRoads(sensitivity) {
-                // Dense, regular grid pattern for urban roads
-                return Array.from({length: 16}, (_, i) =>
-                    (i % 4 === 0 || i % 4 === 2) && Math.random() < sensitivity
-                );
-            }
-
-            generateUrbanBuildings(sensitivity) {
-                // Syncopated pattern for urban buildings
-                return Array.from({length: 16}, (_, i) =>
-                    (i % 4 === 1 || i % 8 === 6) && Math.random() < sensitivity
-                );
-            }
-
-            generateUrbanWater(sensitivity) {
-                // Sparse pattern for urban water features
-                return Array.from({length: 16}, (_, i) =>
-                    (i % 6 === 2 || i === 14) && Math.random() < sensitivity * 0.7
-                );
-            }
-
-            generateUrbanParks(sensitivity) {
-                // Irregular pattern for urban parks
-                return Array.from({length: 16}, (_, i) =>
-                    (i % 7 === 3 || i % 11 === 5) && Math.random() < sensitivity * 0.6
-                );
-            }
-
-            generateCoastalRoads(sensitivity) {
-                // Flowing pattern following coastline
-                return Array.from({length: 16}, (_, i) =>
-                    Math.sin(i * 0.5) > 0.3 && Math.random() < sensitivity
-                );
-            }
-
-            generateCoastalBuildings(sensitivity) {
-                // Clustered coastal development
-                return Array.from({length: 16}, (_, i) =>
-                    (i < 6 || i > 10) && Math.random() < sensitivity * 0.8
-                );
-            }
-
-            generateCoastalWater(sensitivity) {
-                // Prominent water presence
-                return Array.from({length: 16}, (_, i) =>
-                    (i % 3 === 0) && Math.random() < sensitivity
-                );
-            }
-
-            generateCoastalParks(sensitivity) {
-                // Beachfront parks
-                return Array.from({length: 16}, (_, i) =>
-                    (i % 8 === 4 || i % 12 === 8) && Math.random() < sensitivity * 0.7
-                );
-            }
-
-            generateForestRoads(sensitivity) {
-                // Winding forest roads
-                return Array.from({length: 16}, (_, i) =>
-                    (i % 6 === 0 || i % 9 === 4) && Math.random() < sensitivity * 0.6
-                );
-            }
-
-            generateForestBuildings(sensitivity) {
-                // Sparse forest buildings
-                return Array.from({length: 16}, (_, i) =>
-                    (i % 12 === 2 || i === 15) && Math.random() < sensitivity * 0.4
-                );
-            }
-
-            generateForestWater(sensitivity) {
-                // Natural water features
-                return Array.from({length: 16}, (_, i) =>
-                    (i % 5 === 2 || i % 7 === 4) && Math.random() < sensitivity * 0.8
-                );
-            }
-
-            generateForestParks(sensitivity) {
-                // Natural areas
-                return Array.from({length: 16}, (_, i) =>
-                    Math.random() < sensitivity * 0.9
-                );
-            }
-
-            generateSuburbanRoads(sensitivity) {
-                // Regular suburban grid
-                return Array.from({length: 16}, (_, i) =>
-                    (i % 4 === 0) && Math.random() < sensitivity * 0.8
-                );
-            }
-
-            generateSuburbanBuildings(sensitivity) {
-                // Regular suburban buildings
-                return Array.from({length: 16}, (_, i) =>
-                    (i % 2 === 1) && Math.random() < sensitivity * 0.7
-                );
-            }
-
-            generateSuburbanWater(sensitivity) {
-                // Occasional suburban water
-                return Array.from({length: 16}, (_, i) =>
-                    (i % 8 === 3) && Math.random() < sensitivity * 0.5
-                );
-            }
-
-            generateSuburbanParks(sensitivity) {
-                // Regular suburban parks
-                return Array.from({length: 16}, (_, i) =>
-                    (i % 6 === 4) && Math.random() < sensitivity * 0.8
-                );
-            }
-
-            generateRandomPattern() {
-                this.tracks.forEach(track => {
-                    track.pattern = Array.from({length: 16}, () => Math.random() < 0.3);
-                });
-                this.updateSequencerDisplay();
-                this.updateStatus('Random pattern generated');
-            }
-
-            updateSequencerDisplay() {
-                this.tracks.forEach((track, trackIndex) => {
-                    track.pattern.forEach((active, stepIndex) => {
-                        const stepElement = document.querySelector(`[data-track="${trackIndex}"][data-step="${stepIndex}"]`);
-                        if (stepElement) {
-                            stepElement.classList.toggle('active', active);
-                        }
-                    });
-                });
-            }
-
-            updateGeoVisualization() {
-                const cells = document.querySelectorAll('.geo-cell');
-                const types = ['road', 'building', 'water', 'park'];
-
-                cells.forEach((cell, index) => {
-                    cell.className = 'geo-cell';
-
-                    // Map sequencer patterns to geographic visualization
-                    const step = index % 16;
-                    const trackIndex = Math.floor(index / 16) % 4;
-
-                    if (trackIndex < this.tracks.length && this.tracks[trackIndex].pattern[step]) {
-                        cell.classList.add(types[trackIndex]);
-                    }
-                });
-            }
-
-            toggleStep(trackIndex, stepIndex) {
-                this.tracks[trackIndex].pattern[stepIndex] = !this.tracks[trackIndex].pattern[stepIndex];
-                this.updateSequencerDisplay();
-                this.updateGeoVisualization();
-
-                // Play a preview sound when clicking
-                if (this.isAudioInitialized && this.tracks[trackIndex].pattern[stepIndex]) {
-                    this.playTrackSound(trackIndex);
-                }
-            }
-
-            playTrackSound(trackIndex) {
-                switch(trackIndex) {
-                    case 0: this.playKick(); break;
-                    case 1: this.playSnare(); break;
-                    case 2: this.playHiHat(); break;
-                    case 3: this.playPerc(); break;
-                }
-            }
-
-            togglePlayback() {
-                if (this.isPlaying) {
-                    this.stop();
-                } else {
-                    this.play();
-                }
-            }
-
-            play() {
-                this.isPlaying = true;
-                document.getElementById('playButton').textContent = '⏸ Pause';
-
-                const interval = (60 / this.bpm / 4) * 1000; // 16th notes
-
-                this.playInterval = setInterval(() => {
-                    this.step();
-                }, interval);
-
-                this.updateStatus('Playing sequence...');
-            }
-
-            stop() {
-                this.isPlaying = false;
-                document.getElementById('playButton').textContent = '▶ Generate & Play';
-
+            // Cleanup on component destruction
+            destroy() {
                 if (this.playInterval) {
                     clearInterval(this.playInterval);
-                    this.playInterval = null;
                 }
-
-                this.currentBeat = 0;
-                this.updateBeatDisplay();
-                this.updateStatus('Stopped');
-            }
-
-            step() {
-                // Remove previous beat highlighting
-                document.querySelectorAll('.current-beat').forEach(el => {
-                    el.classList.remove('current-beat');
-                });
-
-                // Highlight current beat and trigger active steps
-                this.tracks.forEach((track, trackIndex) => {
-                    const stepElement = document.querySelector(`[data-track="${trackIndex}"][data-step="${this.currentBeat}"]`);
-                    if (stepElement) {
-                        stepElement.classList.add('current-beat');
-
-                        if (track.pattern[this.currentBeat]) {
-                            stepElement.classList.add('playing');
-                            this.playTrackSound(trackIndex); // Play the actual sound!
-                            setTimeout(() => {
-                                stepElement.classList.remove('playing');
-                            }, 100);
-                        }
-                    }
-                });
-
-                this.currentBeat = (this.currentBeat + 1) % this.steps;
-            }
-
-            updateBeatDisplay() {
-                document.querySelectorAll('.current-beat').forEach(el => {
-                    el.classList.remove('current-beat');
-                });
-            }
-
-            clearPattern() {
-                this.tracks.forEach(track => {
-                    track.pattern.fill(false);
-                });
-                this.updateSequencerDisplay();
-                this.updateGeoVisualization();
-                this.updateStatus('Pattern cleared');
-            }
-
-            updateBPMDisplay() {
-                document.querySelector('.bpm-display').textContent = `${this.bpm} BPM`;
-            }
-
-            updateStatus(message = null) {
-                const statusBar = document.getElementById('statusBar');
-                if (message) {
-                    statusBar.textContent = message;
-                } else {
-                    const activeSteps = this.tracks.reduce((sum, track) =>
-                        sum + track.pattern.filter(step => step).length, 0
-                    );
-                    statusBar.textContent = `Geographic pattern mapped to ${activeSteps} active steps`;
+                if (this.audioContext) {
+                    this.audioContext.close();
                 }
             }
         }
 
-        // Initialize the interface when the page loads
+        // Initialize the interface
         document.addEventListener('DOMContentLoaded', () => {
-            new GeoS4Interface();
+            window.sequencer = new GeoJSONSequencer();
+        });
+
+        // Cleanup when the page unloads
+        window.addEventListener('beforeunload', () => {
+            if (window.sequencer) {
+                window.sequencer.destroy();
+            }
         });
     </script>
 </body>
