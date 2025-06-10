@@ -207,6 +207,37 @@
             font-weight: bold;
         }
 
+        .transport-btn.recording {
+            background: linear-gradient(45deg, #ff4444, #cc3333);
+            color: #fff;
+            font-weight: bold;
+            animation: recordPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes recordPulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .transport-btn:disabled {
+            background: rgba(100, 100, 100, 0.3);
+            color: #666;
+            cursor: not-allowed;
+            border-color: #444;
+        }
+
+        .recording-indicator {
+            background: linear-gradient(45deg, #ff4444, #cc3333);
+            color: white;
+            padding: 8px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            text-align: center;
+            margin: 5px 0;
+            animation: recordPulse 1s ease-in-out infinite;
+        }
+
         .status-display {
             padding: 10px;
             background: rgba(0, 0, 0, 0.5);
@@ -379,6 +410,20 @@
                     <button class="transport-btn" id="clearButton">🗑 Clear</button>
                     <button class="transport-btn" id="regenerateButton">🔄 Regen</button>
                 </div>
+
+                <div class="control-section">
+                    <h3>🎙️ Recording</h3>
+                    <div class="transport-controls">
+                        <button class="transport-btn" id="recordButton">🔴 Record</button>
+                        <button class="transport-btn" id="downloadButton" disabled>💾 Download</button>
+                    </div>
+                    <div class="status-display" id="recordStatus">Ready to record</div>
+                    <div class="slider-container">
+                        <label>Recording Length (bars)</label>
+                        <input type="range" class="slider" id="recordLength" min="1" max="8" value="2">
+                        <span id="recordLengthDisplay">2 bars</span>
+                    </div>
+                </div>
             </div>
 
             <div class="control-section">
@@ -461,6 +506,15 @@
                 this.audioContext = null;
                 this.masterGain = null;
                 this.isAudioInitialized = false;
+
+                // Recording setup
+                this.isRecording = false;
+                this.recordingStartTime = null;
+                this.recordingDuration = 0;
+                this.recordingBuffer = null;
+                this.recordingMediaRecorder = null;
+                this.recordingChunks = [];
+                this.recordingDestination = null;
 
                 this.setupEventListeners();
                 this.resizeCanvas();
@@ -577,6 +631,20 @@
                 document.getElementById('regenerateButton').addEventListener('click', () => {
                     if (this.geoData) this.generateSequenceFromGeoData();
                 });
+
+                // Recording controls
+                document.getElementById('recordButton').addEventListener('click', () => {
+                    this.toggleRecording();
+                });
+
+                document.getElementById('downloadButton').addEventListener('click', () => {
+                    this.downloadRecording();
+                });
+
+                document.getElementById('recordLength').addEventListener('input', (e) => {
+                    const bars = parseInt(e.target.value);
+                    document.getElementById('recordLengthDisplay').textContent = `${bars} bar${bars > 1 ? 's' : ''}`;
+                });
             }
 
             async initializeAudio() {
@@ -587,6 +655,11 @@
                     this.masterGain = this.audioContext.createGain();
                     this.masterGain.connect(this.audioContext.destination);
                     this.masterGain.gain.value = 0.7;
+
+                    // Set up recording destination
+                    this.recordingDestination = this.audioContext.createMediaStreamDestination();
+                    this.masterGain.connect(this.recordingDestination);
+
                     this.isAudioInitialized = true;
                     this.updateDataStatus('🔊 Audio initialized - ready to play!');
                 } catch (error) {
@@ -1127,13 +1200,162 @@
                 osc.stop(now + 0.15);
             }
 
+            // Recording functionality
+            async toggleRecording() {
+                if (!this.isAudioInitialized) {
+                    await this.initializeAudio();
+                }
+
+                if (this.isRecording) {
+                    this.stopRecording();
+                } else {
+                    this.startRecording();
+                }
+            }
+
+            startRecording() {
+                try {
+                    if (!this.recordingDestination) {
+                        throw new Error('Recording destination not available');
+                    }
+
+                    // Calculate recording duration
+                    const bars = parseInt(document.getElementById('recordLength').value);
+                    const beatsPerBar = 16; // 16 steps per bar
+                    const stepDuration = (60 / this.bpm / 4); // 16th notes in seconds
+                    this.recordingDuration = bars * beatsPerBar * stepDuration * 1000; // in milliseconds
+
+                    // Set up MediaRecorder
+                    const mediaStream = this.recordingDestination.stream;
+                    this.recordingMediaRecorder = new MediaRecorder(mediaStream, {
+                        mimeType: 'audio/webm;codecs=opus'
+                    });
+
+                    this.recordingChunks = [];
+
+                    this.recordingMediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            this.recordingChunks.push(event.data);
+                        }
+                    };
+
+                    this.recordingMediaRecorder.onstop = () => {
+                        this.processRecording();
+                    };
+
+                    // Start recording
+                    this.recordingMediaRecorder.start(100); // Collect data every 100ms
+                    this.isRecording = true;
+                    this.recordingStartTime = Date.now();
+
+                    // Update UI
+                    const recordButton = document.getElementById('recordButton');
+                    recordButton.textContent = '⏹ Stop Rec';
+                    recordButton.classList.add('recording');
+                    this.updateRecordStatus('🔴 Recording...');
+
+                    // Auto-start playback if not already playing
+                    if (!this.isPlaying) {
+                        this.play();
+                    }
+
+                    // Schedule automatic stop
+                    setTimeout(() => {
+                        if (this.isRecording) {
+                            this.stopRecording();
+                        }
+                    }, this.recordingDuration);
+
+                } catch (error) {
+                    console.error('Failed to start recording:', error);
+                    this.updateRecordStatus('❌ Recording failed');
+                }
+            }
+
+            stopRecording() {
+                if (!this.isRecording) return;
+
+                this.isRecording = false;
+
+                if (this.recordingMediaRecorder && this.recordingMediaRecorder.state !== 'inactive') {
+                    this.recordingMediaRecorder.stop();
+                }
+
+                // Update UI
+                const recordButton = document.getElementById('recordButton');
+                recordButton.textContent = '🔴 Record';
+                recordButton.classList.remove('recording');
+                this.updateRecordStatus('⏹ Recording stopped - processing...');
+            }
+
+            processRecording() {
+                try {
+                    const blob = new Blob(this.recordingChunks, { type: 'audio/webm' });
+                    this.recordingBlob = blob;
+
+                    // Enable download button
+                    const downloadButton = document.getElementById('downloadButton');
+                    downloadButton.disabled = false;
+
+                    const duration = (Date.now() - this.recordingStartTime) / 1000;
+                    this.updateRecordStatus(`✅ Recording ready! (${duration.toFixed(1)}s)`);
+
+                } catch (error) {
+                    console.error('Failed to process recording:', error);
+                    this.updateRecordStatus('❌ Processing failed');
+                }
+            }
+
+            downloadRecording() {
+                if (!this.recordingBlob) {
+                    this.updateRecordStatus('❌ No recording available');
+                    return;
+                }
+
+                try {
+                    // Create download link
+                    const url = URL.createObjectURL(this.recordingBlob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+
+                    // Generate filename with timestamp
+                    const now = new Date();
+                    const timestamp = now.toISOString().slice(0, 19).replace(/[:.]/g, '-');
+                    const cityName = this.geoData ? 'geographic-sequence' : 'sequence';
+                    a.download = `GeoS4-${cityName}-${timestamp}.webm`;
+
+                    // Trigger download
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    this.updateRecordStatus('💾 Download started!');
+
+                } catch (error) {
+                    console.error('Failed to download recording:', error);
+                    this.updateRecordStatus('❌ Download failed');
+                }
+            }
+
+            updateRecordStatus(message) {
+                document.getElementById('recordStatus').textContent = message;
+            }
+
             // Cleanup on component destruction
             destroy() {
                 if (this.playInterval) {
                     clearInterval(this.playInterval);
                 }
+                if (this.isRecording) {
+                    this.stopRecording();
+                }
                 if (this.audioContext) {
                     this.audioContext.close();
+                }
+                if (this.recordingBlob) {
+                    URL.revokeObjectURL(this.recordingBlob);
                 }
             }
         }
