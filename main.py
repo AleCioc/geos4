@@ -11,6 +11,7 @@ import time
 import hashlib
 import contextily as ctx
 import matplotlib.patches as patches
+import base64
 
 # --- Initial Page Setup ---
 
@@ -19,6 +20,39 @@ st.set_page_config(
     page_icon="🌍",
     layout="wide"
 )
+
+
+# --- Audio File Processing ---
+
+def process_uploaded_audio(uploaded_file, track_index):
+    """
+    Process an uploaded audio file and store it for the sequencer.
+    """
+    if uploaded_file is not None:
+        # Read the file content
+        audio_bytes = uploaded_file.read()
+
+        # Convert to base64 for embedding in HTML
+        audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
+
+        # Determine MIME type based on file extension
+        file_extension = uploaded_file.name.split('.')[-1].lower()
+        mime_types = {
+            'mp3': 'audio/mpeg',
+            'wav': 'audio/wav',
+            'ogg': 'audio/ogg',
+            'm4a': 'audio/mp4',
+            'aac': 'audio/aac'
+        }
+        mime_type = mime_types.get(file_extension, 'audio/mpeg')
+
+        return {
+            'data': audio_base64,
+            'mime_type': mime_type,
+            'filename': uploaded_file.name,
+            'size': len(audio_bytes)
+        }
+    return None
 
 
 # --- Real Geographic Data Processing ---
@@ -59,11 +93,11 @@ def fetch_and_process_city_data(city_name, num_points, generation_mode, num_step
 
     # For each point, determine which sequencer cell it belongs to and create active cell data
     for point_idx, p in enumerate(points):
-        # Map longitude to step (0-15)
+        # Map longitude to step (0 to num_steps-1)
         step_index = int((p.x - minx) / lng_step)
         step_index = min(step_index, num_steps - 1)  # Ensure within bounds
 
-        # Map latitude to track (0-3) - invert the mapping so track 0 is at the top
+        # Map latitude to track (0 to num_tracks-1) - invert the mapping so track 0 is at the top
         track_index = num_tracks - 1 - int((p.y - miny) / lat_step)
         track_index = max(0, min(track_index, num_tracks - 1))  # Ensure within bounds
 
@@ -121,9 +155,10 @@ def convert_gdf_to_geojson(gdf):
     }
 
 
-def create_webaudio_sequencer(version, active_cells_data, bpm, is_playing, timestamp, geojson_data=None):
+def create_webaudio_sequencer(version, active_cells_data, bpm, is_playing, timestamp, geojson_data=None,
+                              grid_config=None, custom_audio_files=None):
     """
-    Loads sequencer HTML from a file and injects Python data including GeoJSON and active cells.
+    Loads sequencer HTML from a file and injects Python data including GeoJSON, active cells, grid config, and custom audio.
     """
     filename_map = {
         'V0': 'sequencer_1.html'
@@ -138,6 +173,8 @@ def create_webaudio_sequencer(version, active_cells_data, bpm, is_playing, times
 
     active_cells_json = json.dumps(active_cells_data)
     geojson_json = json.dumps(geojson_data) if geojson_data else 'null'
+    grid_config_json = json.dumps(grid_config) if grid_config else 'null'
+    custom_audio_json = json.dumps(custom_audio_files) if custom_audio_files else 'null'
 
     # Inject all data including active cells directly into the HTML
     injection_script = f"""
@@ -146,10 +183,14 @@ def create_webaudio_sequencer(version, active_cells_data, bpm, is_playing, times
         const BPM = {bpm};
         const ACTIVE_CELLS_DATA = {active_cells_json};
         const GEOJSON_DATA = {geojson_json};
+        const GRID_CONFIG = {grid_config_json};
+        const CUSTOM_AUDIO_FILES = {custom_audio_json};
         const COMPONENT_TIMESTAMP = "{timestamp}";
         console.log("Component loaded at:", COMPONENT_TIMESTAMP);
         console.log("Active cells data:", ACTIVE_CELLS_DATA);
         console.log("GeoJSON data injected:", GEOJSON_DATA ? GEOJSON_DATA.features?.length + " points" : "null");
+        console.log("Grid config:", GRID_CONFIG);
+        console.log("Custom audio files:", CUSTOM_AUDIO_FILES);
         // --- End of Injected Data ---
     """
 
@@ -241,13 +282,12 @@ def generate_component_key(*args):
 # --- Main Application Logic ---
 
 def main():
-
     def load_css(file_name):
-        with open(file_name, 'r', encoding='utf-8') as f:
-            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+        if os.path.exists(file_name):
+            with open(file_name, 'r', encoding='utf-8') as f:
+                st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
     load_css("styles.css")
-
 
     # Add top bar
     st.markdown("""
@@ -266,40 +306,52 @@ def main():
     </div>
     """, unsafe_allow_html=True)
 
-    # --- Sidebar for Controls ---
-    with st.sidebar:
-        st.markdown("""
-        <div>
-            <h2>
-                🎛️ CONTROL PANEL
-            </h2>
-        </div>
-        """, unsafe_allow_html=True)
+    # --- Control Panel at Top ---
+    with st.expander("🎛️ CONTROL PANEL", expanded=False):
+        # Three columns for better organization
+        col1, col2, col3 = st.columns([1, 1, 1])
 
-        sequencer_version = st.selectbox(
-            "Select Sequencer Style",
-            ('V0',),
-            key='sequencer_version_selector'
-        )
+        with col1:
+            st.subheader("🔧 Grid Configuration")
+            num_steps = st.slider("Steps (Width)", 8, 32, 16, step=2,
+                                  help="Number of horizontal steps in the sequencer")
+            num_tracks = st.slider("Tracks (Height)", 2, 8, 4, step=1,
+                                   help="Number of vertical tracks in the sequencer")
 
+        with col2:
+            st.subheader("📍 Points Generation")
+            city_query = st.text_input("Enter a City Name", "Bari, Italy")
+            generation_mode = st.selectbox(
+                "Points Generation Mode",
+                ("Random Points in Space",),
+                key='generation_mode'
+            )
+            num_points = st.slider("Number of Sample Points", 5, 200, 50,
+                                   help="More points create a denser pattern.")
+
+        with col3:
+            st.subheader("🎵 Audio Management")
+            sequencer_version = st.selectbox(
+                "Select Sequencer Style",
+                ('V0',),
+                key='sequencer_version_selector'
+            )
+
+            # Initialize custom audio files in session state if not exists
+            if 'custom_audio_files' not in st.session_state:
+                st.session_state.custom_audio_files = {}
+
+            # Show audio file status
+            current_num_tracks = st.session_state.get('grid_config', {}).get('num_tracks', 4)
+            custom_files_count = len(st.session_state.get('custom_audio_files', {}))
+
+
+        # Generate button spanning full width
         st.markdown("---")
-        st.subheader("📍 Points Generation")
-
-        city_query = st.text_input("Enter a City Name", "Bari, Italy")
-
-        generation_mode = st.selectbox(
-            "Points Generation Mode",
-            ("Random Points in Space",),
-            key='generation_mode'
-        )
-
-        num_points = st.slider("Number of Sample Points", 5, 200, 50,
-                               help="More points create a denser pattern.")
-
-        if st.button("🏗️ Generate Pattern from City", type="primary"):
+        if st.button("🏗️ Generate Pattern from City", type="primary", use_container_width=True):
             with st.spinner(f"Fetching data for {city_query}..."):
                 city_gdf, points_gdf, active_cells_data = fetch_and_process_city_data(
-                    city_query, num_points, generation_mode)
+                    city_query, num_points, generation_mode, num_steps, num_tracks)
 
                 if city_gdf is not None:
                     # Convert to GeoJSON
@@ -310,6 +362,10 @@ def main():
                     st.session_state.points_gdf = points_gdf
                     st.session_state.active_cells_data = active_cells_data
                     st.session_state.geojson_data = geojson_data
+                    st.session_state.grid_config = {
+                        'num_steps': num_steps,
+                        'num_tracks': num_tracks
+                    }
                     st.session_state.data_timestamp = time.time()
 
                     st.success(f"✅ Generated {num_points} points for {city_query}")
@@ -317,13 +373,16 @@ def main():
 
     # --- Initialize State ---
     if 'active_cells_data' not in st.session_state:
-        st.info("👆 Enter a city name and click 'Generate Pattern' to begin creating your geographical sequencer!")
+        st.info(
+            "👆 Open the Control Panel above to configure your grid size, enter a city name, and generate your geographical sequencer!")
         st.markdown("### How it works:")
         st.markdown("""
-        1. **Select a city** - Enter any city name (e.g., 'Paris, France', 'Tokyo, Japan')
-        2. **Generate points** - The app samples random geographic points within the city boundaries
-        3. **Create patterns** - Points are mapped to a 16-step, 4-track sequencer grid
-        4. **Play music** - Each track represents different spatial zones of the city
+        1. **Configure the grid** - Set the number of steps (width) and tracks (height)
+        2. **Select a city** - Enter any city name (e.g., 'Paris, France', 'Tokyo, Japan')
+        3. **Upload custom sounds** - Use the sequencer interface below to upload custom audio for each track
+        4. **Generate points** - The app samples random geographic points within the city boundaries
+        5. **Create patterns** - Points are mapped to your custom sequencer grid
+        6. **Play music** - Each track represents different spatial zones of the city
         """)
         st.stop()
 
@@ -333,8 +392,9 @@ def main():
     points_gdf = st.session_state.get('points_gdf')
     active_cells_data = st.session_state.get('active_cells_data')
     geojson_data = st.session_state.get('geojson_data')
+    grid_config = st.session_state.get('grid_config', {'num_steps': 16, 'num_tracks': 4})
+    custom_audio_files = st.session_state.get('custom_audio_files', {})
     data_timestamp = st.session_state.get('data_timestamp', 0)
-    control_timestamp = st.session_state.get('control_timestamp', 0)
 
     # --- Main Layout with Background ---
 
@@ -344,7 +404,6 @@ def main():
     if background_fig:
         # Save figure as temporary image
         import io
-        import base64
 
         buf = io.BytesIO()
         background_fig.savefig(buf, format='png', bbox_inches='tight',
@@ -364,12 +423,20 @@ def main():
             background-repeat: no-repeat;
             background-attachment: fixed;
         }}
-
+        </style>
         """
         st.markdown(background_css, unsafe_allow_html=True)
 
+    # Display grid info
+    st.markdown(f"""
+    <div style="background: rgba(0, 0, 0, 0.8); padding: 10px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
+        <span style="color: #00ff88; font-weight: bold;">Current Grid: {grid_config['num_steps']} steps × {grid_config['num_tracks']} tracks</span>
+        {f" | Custom audio files: {len(custom_audio_files)}/{grid_config['num_tracks']}" if custom_audio_files else ""}
+    </div>
+    """, unsafe_allow_html=True)
+
     # Sequencer component
-    bpm = 90  # Default BPM since we removed controls
+    bpm = 90  # Default BPM
 
     webaudio_component = create_webaudio_sequencer(
         sequencer_version,
@@ -377,10 +444,17 @@ def main():
         bpm,
         is_playing,
         str(time.time()),
-        geojson_data
+        geojson_data,
+        grid_config,
+        custom_audio_files
     )
 
-    component_height = 900
+    # Adjust component height based on number of tracks
+    base_height = 700
+    extra_height_per_track = 30
+    component_height = base_height + (grid_config['num_tracks'] - 4) * extra_height_per_track
+    component_height = max(600, min(component_height, 1200))  # Clamp between 600-1200px
+
     components.html(
         webaudio_component,
         height=component_height,

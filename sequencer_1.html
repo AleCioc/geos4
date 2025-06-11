@@ -38,7 +38,7 @@
         }
 
         .track-controls {
-            width: 120px;
+            width: 140px;
             background: rgba(0, 0, 0, 0.9);
             display: flex;
             flex-direction: column;
@@ -54,7 +54,7 @@
             gap: 8px;
             padding: 10px;
             border-bottom: 1px solid #333;
-            min-height: 80px;
+            min-height: 60px;
         }
 
         .track-control:last-child {
@@ -76,7 +76,7 @@
             color: #e0e0e0;
             padding: 4px 6px;
             font-size: 0.75em;
-            width: 70px;
+            width: 90px;
             text-align: center;
         }
 
@@ -90,6 +90,36 @@
             font-size: 0.7em;
             color: #b0b0b0;
             text-align: center;
+        }
+
+        .custom-audio-indicator {
+            font-size: 0.6em;
+            color: #00ff88;
+            background: rgba(0, 255, 136, 0.2);
+            padding: 2px 4px;
+            border-radius: 3px;
+            margin-top: 2px;
+        }
+
+        .upload-button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #555;
+            border-radius: 4px;
+            color: #e0e0e0;
+            padding: 4px 8px;
+            font-size: 0.7em;
+            cursor: pointer;
+            margin-top: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .upload-button:hover {
+            background: rgba(0, 255, 136, 0.2);
+            border-color: #00ff88;
+        }
+
+        .file-input {
+            display: none;
         }
 
         .grid-and-map-container {
@@ -114,12 +144,10 @@
             width: 100%;
             height: 100%;
             display: grid;
-            grid-template-columns: repeat(16, 1fr);
-            grid-template-rows: repeat(4, 1fr);
             gap: 1px;
             padding: 1px;
             z-index: 10;
-            opacity: 0.1; /* Start with low opacity to show points underneath */
+            opacity: 0.1;
         }
 
         .sequencer-cell {
@@ -261,7 +289,7 @@
             position: absolute;
             width: 3px;
             height: 3px;
-            background: rgba(255, 255, 255, 0.6); /* Always visible with transparency */
+            background: rgba(255, 255, 255, 0.6);
             border-radius: 50%;
             transform: translate(-50%, -50%);
             box-shadow: 0 0 4px rgba(255, 255, 255, 0.4);
@@ -319,6 +347,16 @@
             top: -2px;
             left: 2px;
         }
+
+        .audio-loading {
+            color: #ff9800;
+            font-size: 0.6em;
+        }
+
+        .audio-error {
+            color: #ff4444;
+            font-size: 0.6em;
+        }
     </style>
 </head>
 <body>
@@ -371,8 +409,7 @@
 
     <script>
         /**
-         * GeoS4 Sound Engine - Embedded Version
-         * Four essential drum sounds for geographic sequencing
+         * Enhanced GeoS4 Sound Engine with Custom Audio Support
          */
         class GeoS4SoundEngine {
             constructor() {
@@ -380,6 +417,8 @@
                 this.masterGain = null;
                 this.isAudioInitialized = false;
                 this.clickMuted = false;
+                this.customAudioBuffers = {}; // Store loaded custom audio buffers
+                this.loadingAudio = new Set(); // Track which audio files are loading
             }
 
             async initializeAudio() {
@@ -398,18 +437,80 @@
                 }
             }
 
+            async loadCustomAudio(trackKey, audioData) {
+                if (!this.audioContext) {
+                    await this.initializeAudio();
+                }
+
+                if (!audioData || this.loadingAudio.has(trackKey)) {
+                    return false;
+                }
+
+                this.loadingAudio.add(trackKey);
+
+                try {
+                    // Convert base64 to ArrayBuffer
+                    const binaryString = atob(audioData.data);
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+
+                    // Decode audio data
+                    const audioBuffer = await this.audioContext.decodeAudioData(bytes.buffer);
+                    this.customAudioBuffers[trackKey] = audioBuffer;
+
+                    console.log(`Custom audio loaded for ${trackKey}:`, audioData.filename);
+                    this.loadingAudio.delete(trackKey);
+                    return true;
+
+                } catch (error) {
+                    console.error(`Failed to load custom audio for ${trackKey}:`, error);
+                    this.loadingAudio.delete(trackKey);
+                    return false;
+                }
+            }
+
             setClickMuted(muted) {
                 this.clickMuted = muted;
             }
 
-            playTrackSound(trackIndex, soundType = null, isClick = false) {
+            async playTrackSound(trackIndex, soundType = null, isClick = false) {
                 // Only apply mute to click sounds
                 if (isClick && this.clickMuted) return;
 
-                // Default sounds for each track
+                const trackKey = `track_${trackIndex}`;
+
+                // Try to play custom audio first
+                if (this.customAudioBuffers[trackKey]) {
+                    this.playCustomAudio(trackKey);
+                    return;
+                }
+
+                // Fallback to default sounds
                 const defaultSounds = ['kick', 'snare', 'hihat', 'perc'];
-                const sound = soundType || defaultSounds[trackIndex];
+                const sound = soundType || defaultSounds[trackIndex % defaultSounds.length];
                 this.playSound(sound);
+            }
+
+            playCustomAudio(trackKey) {
+                if (!this.audioContext || !this.customAudioBuffers[trackKey]) return;
+
+                try {
+                    const source = this.audioContext.createBufferSource();
+                    const gainNode = this.audioContext.createGain();
+
+                    source.buffer = this.customAudioBuffers[trackKey];
+                    source.connect(gainNode);
+                    gainNode.connect(this.masterGain);
+
+                    // Set volume for custom audio
+                    gainNode.gain.value = 0.8;
+
+                    source.start(0);
+                } catch (error) {
+                    console.error(`Error playing custom audio for ${trackKey}:`, error);
+                }
             }
 
             playSound(soundType) {
@@ -426,6 +527,29 @@
                         this.playHiHat();
                         break;
                     case 'perc':
+                        this.playPerc();
+                        break;
+                    case 'clap':
+                        this.playClap();
+                        break;
+                    case 'cymbal':
+                        this.playCymbal();
+                        break;
+                    case 'tom':
+                        this.playTom();
+                        break;
+                    case 'rim':
+                        this.playRim();
+                        break;
+                    case 'cowbell':
+                        this.playCowbell();
+                        break;
+                    case 'shaker':
+                        this.playShaker();
+                        break;
+                    case 'bass':
+                        this.playBass();
+                        break;
                     default:
                         this.playPerc();
                         break;
@@ -556,6 +680,191 @@
                 osc.stop(now + 0.15);
             }
 
+            // Clap - Sharp noise burst with envelope
+            playClap() {
+                const now = this.audioContext.currentTime;
+
+                const bufferSize = this.audioContext.sampleRate * 0.15;
+                const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+                const output = buffer.getChannelData(0);
+
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
+                }
+
+                const noise = this.audioContext.createBufferSource();
+                const noiseGain = this.audioContext.createGain();
+                const noiseFilter = this.audioContext.createBiquadFilter();
+
+                noise.buffer = buffer;
+                noise.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+                noiseGain.connect(this.masterGain);
+
+                noiseFilter.type = 'bandpass';
+                noiseFilter.frequency.value = 1500;
+                noiseFilter.Q.value = 2;
+
+                noiseGain.gain.setValueAtTime(0.6, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+
+                noise.start(now);
+            }
+
+            // Cymbal - Metallic crash sound
+            playCymbal() {
+                const now = this.audioContext.currentTime;
+
+                const bufferSize = this.audioContext.sampleRate * 1.5;
+                const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+                const output = buffer.getChannelData(0);
+
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 0.5);
+                }
+
+                const noise = this.audioContext.createBufferSource();
+                const noiseGain = this.audioContext.createGain();
+                const noiseFilter = this.audioContext.createBiquadFilter();
+
+                noise.buffer = buffer;
+                noise.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+                noiseGain.connect(this.masterGain);
+
+                noiseFilter.type = 'highpass';
+                noiseFilter.frequency.value = 3000;
+
+                noiseGain.gain.setValueAtTime(0.4, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 1.5);
+
+                noise.start(now);
+            }
+
+            // Tom - Pitched drum sound
+            playTom() {
+                const now = this.audioContext.currentTime;
+
+                const osc = this.audioContext.createOscillator();
+                const oscGain = this.audioContext.createGain();
+
+                osc.connect(oscGain);
+                oscGain.connect(this.masterGain);
+
+                // Frequency sweep from 150Hz down
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
+
+                oscGain.gain.setValueAtTime(0.6, now);
+                oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+                osc.start(now);
+                osc.stop(now + 0.3);
+            }
+
+            // Rim Shot - Sharp attack sound
+            playRim() {
+                const now = this.audioContext.currentTime;
+
+                const osc = this.audioContext.createOscillator();
+                const oscGain = this.audioContext.createGain();
+                const filter = this.audioContext.createBiquadFilter();
+
+                osc.connect(filter);
+                filter.connect(oscGain);
+                oscGain.connect(this.masterGain);
+
+                osc.frequency.value = 2000;
+                filter.type = 'bandpass';
+                filter.frequency.value = 2000;
+                filter.Q.value = 10;
+
+                oscGain.gain.setValueAtTime(0.3, now);
+                oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+
+                osc.start(now);
+                osc.stop(now + 0.05);
+            }
+
+            // Cowbell - Metallic bell sound
+            playCowbell() {
+                const now = this.audioContext.currentTime;
+
+                const osc1 = this.audioContext.createOscillator();
+                const osc2 = this.audioContext.createOscillator();
+                const oscGain = this.audioContext.createGain();
+
+                osc1.connect(oscGain);
+                osc2.connect(oscGain);
+                oscGain.connect(this.masterGain);
+
+                osc1.frequency.value = 800;
+                osc2.frequency.value = 540;
+
+                oscGain.gain.setValueAtTime(0.3, now);
+                oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+
+                osc1.start(now);
+                osc2.start(now);
+                osc1.stop(now + 0.25);
+                osc2.stop(now + 0.25);
+            }
+
+            // Shaker - High frequency noise
+            playShaker() {
+                const now = this.audioContext.currentTime;
+
+                const bufferSize = this.audioContext.sampleRate * 0.08;
+                const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+                const output = buffer.getChannelData(0);
+
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 4);
+                }
+
+                const noise = this.audioContext.createBufferSource();
+                const noiseGain = this.audioContext.createGain();
+                const noiseFilter = this.audioContext.createBiquadFilter();
+
+                noise.buffer = buffer;
+                noise.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+                noiseGain.connect(this.masterGain);
+
+                noiseFilter.type = 'highpass';
+                noiseFilter.frequency.value = 10000;
+
+                noiseGain.gain.setValueAtTime(0.2, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+
+                noise.start(now);
+            }
+
+            // Bass - Low frequency tone
+            playBass() {
+                const now = this.audioContext.currentTime;
+
+                const osc = this.audioContext.createOscillator();
+                const oscGain = this.audioContext.createGain();
+                const filter = this.audioContext.createBiquadFilter();
+
+                osc.connect(filter);
+                filter.connect(oscGain);
+                oscGain.connect(this.masterGain);
+
+                osc.frequency.setValueAtTime(80, now);
+                osc.frequency.exponentialRampToValueAtTime(40, now + 0.4);
+
+                filter.type = 'lowpass';
+                filter.frequency.value = 200;
+
+                oscGain.gain.setValueAtTime(0.5, now);
+                oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+
+                osc.start(now);
+                osc.stop(now + 0.4);
+            }
+
             // Cleanup
             destroy() {
                 if (this.audioContext && this.audioContext.state !== 'closed') {
@@ -576,17 +885,14 @@
                 this.currentBeat = 0;
                 this.bpm = 120;
                 this.playInterval = null;
-                this.persistentPointMarkers = []; // Store permanent point markers
+                this.persistentPointMarkers = [];
 
-                // Grid and sequencer setup
+                // Default grid configuration
                 this.gridCols = 16;
                 this.gridRows = 4;
-                this.tracks = [
-                    { name: 'Track 1', color: '#ff6b6b', pattern: new Array(16).fill(false), sound: 'kick' },
-                    { name: 'Track 2', color: '#4ecdc4', pattern: new Array(16).fill(false), sound: 'snare' },
-                    { name: 'Track 3', color: '#45b7d1', pattern: new Array(16).fill(false), sound: 'hihat' },
-                    { name: 'Track 4', color: '#96ceb4', pattern: new Array(16).fill(false), sound: 'perc' }
-                ];
+
+                // Default track configuration
+                this.tracks = [];
 
                 // Audio setup using external sound engine
                 this.soundEngine = new GeoS4SoundEngine();
@@ -594,13 +900,31 @@
 
                 this.setupEventListeners();
                 this.resizeCanvas();
-                this.createSequencerGrid();
-                this.createTrackControls();
 
                 // Apply injected settings from Python and load data
                 this.applyInjectedSettings();
 
                 window.addEventListener('resize', () => this.resizeCanvas());
+            }
+
+            initializeTracks() {
+                const trackColors = [
+                    '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4',
+                    '#feca57', '#ff9ff3', '#54a0ff', '#5f27cd',
+                    '#00d2d3', '#ff9f43', '#10ac84', '#ee5a24'
+                ];
+
+                const trackSounds = ['kick', 'snare', 'hihat', 'perc', 'clap', 'cymbal', 'tom', 'rim'];
+
+                this.tracks = [];
+                for (let i = 0; i < this.gridRows; i++) {
+                    this.tracks.push({
+                        name: `Track ${i + 1}`,
+                        color: trackColors[i % trackColors.length],
+                        pattern: new Array(this.gridCols).fill(false),
+                        sound: trackSounds[i % trackSounds.length]
+                    });
+                }
             }
 
             createTrackControls() {
@@ -626,25 +950,133 @@
                         <option value="snare" ${track.sound === 'snare' ? 'selected' : ''}>Snare</option>
                         <option value="hihat" ${track.sound === 'hihat' ? 'selected' : ''}>Hi-Hat</option>
                         <option value="perc" ${track.sound === 'perc' ? 'selected' : ''}>Perc</option>
+                        <option value="clap" ${track.sound === 'clap' ? 'selected' : ''}>Clap</option>
+                        <option value="cymbal" ${track.sound === 'cymbal' ? 'selected' : ''}>Cymbal</option>
+                        <option value="tom" ${track.sound === 'tom' ? 'selected' : ''}>Tom</option>
+                        <option value="rim" ${track.sound === 'rim' ? 'selected' : ''}>Rim</option>
+                        <option value="cowbell" ${track.sound === 'cowbell' ? 'selected' : ''}>Cowbell</option>
+                        <option value="shaker" ${track.sound === 'shaker' ? 'selected' : ''}>Shaker</option>
+                        <option value="bass" ${track.sound === 'bass' ? 'selected' : ''}>Bass</option>
+                        <option value="custom" data-custom="true">🎵 Upload Custom</option>
                     `;
 
                     select.addEventListener('change', (e) => {
-                        this.tracks[index].sound = e.target.value;
+                        if (e.target.value === 'custom') {
+                            this.openFileUpload(index);
+                            // Reset to previous value temporarily
+                            e.target.value = this.tracks[index].sound;
+                        } else {
+                            this.tracks[index].sound = e.target.value;
+                        }
+                    });
+
+                    // Custom audio indicator
+                    const customIndicator = document.createElement('div');
+                    customIndicator.className = 'custom-audio-indicator';
+                    customIndicator.id = `custom-indicator-${index}`;
+                    customIndicator.style.display = 'none';
+                    customIndicator.textContent = 'CUSTOM';
+
+                    // Hidden file input
+                    const fileInput = document.createElement('input');
+                    fileInput.type = 'file';
+                    fileInput.className = 'file-input';
+                    fileInput.accept = '.mp3,.wav,.ogg,.m4a,.aac';
+                    fileInput.id = `file-input-${index}`;
+                    fileInput.addEventListener('change', (e) => {
+                        this.handleFileUpload(e, index);
                     });
 
                     control.appendChild(label);
                     control.appendChild(colorBox);
                     control.appendChild(select);
+                    control.appendChild(customIndicator);
+                    control.appendChild(fileInput);
                     container.appendChild(control);
                 });
             }
 
-            applyInjectedSettings() {
+            openFileUpload(trackIndex) {
+                const fileInput = document.getElementById(`file-input-${trackIndex}`);
+                if (fileInput) {
+                    fileInput.click();
+                }
+            }
+
+            async handleFileUpload(event, trackIndex) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const trackKey = `track_${trackIndex}`;
+                const indicator = document.getElementById(`custom-indicator-${trackIndex}`);
+
+                if (indicator) {
+                    indicator.style.display = 'block';
+                    indicator.textContent = 'LOADING...';
+                    indicator.className = 'custom-audio-indicator audio-loading';
+                }
+
+                try {
+                    // Read file as ArrayBuffer
+                    const arrayBuffer = await file.arrayBuffer();
+
+                    // Create audio data object
+                    const audioData = {
+                        data: btoa(String.fromCharCode(...new Uint8Array(arrayBuffer))),
+                        mime_type: file.type || 'audio/mpeg',
+                        filename: file.name,
+                        size: file.size
+                    };
+
+                    // Load the audio
+                    const success = await this.soundEngine.loadCustomAudio(trackKey, audioData);
+
+                    if (indicator) {
+                        if (success) {
+                            indicator.textContent = file.name.length > 8 ? file.name.substring(0, 8) + '...' : file.name;
+                            indicator.className = 'custom-audio-indicator';
+                            indicator.title = file.name; // Show full name on hover
+                        } else {
+                            indicator.textContent = 'ERROR';
+                            indicator.className = 'custom-audio-indicator audio-error';
+                        }
+                    }
+
+                    // Clear the file input for future uploads
+                    event.target.value = '';
+
+                } catch (error) {
+                    console.error(`Failed to load custom audio for track ${trackIndex}:`, error);
+                    if (indicator) {
+                        indicator.textContent = 'ERROR';
+                        indicator.className = 'custom-audio-indicator audio-error';
+                    }
+                }
+            }
+
+            async applyInjectedSettings() {
+                // Apply grid configuration from Python
+                if (typeof GRID_CONFIG !== 'undefined' && GRID_CONFIG) {
+                    this.gridCols = GRID_CONFIG.num_steps || 16;
+                    this.gridRows = GRID_CONFIG.num_tracks || 4;
+                    console.log(`Grid configuration: ${this.gridCols} × ${this.gridRows}`);
+                }
+
+                // Initialize tracks based on grid configuration
+                this.initializeTracks();
+                this.createSequencerGrid();
+                this.createTrackControls();
+
                 // Apply Python-injected settings if they exist
                 if (typeof BPM !== 'undefined') {
                     this.bpm = BPM;
                     document.getElementById('bpm').value = BPM;
                     document.getElementById('bpmDisplay').textContent = BPM;
+                }
+
+                // Load custom audio files from Python
+                if (typeof CUSTOM_AUDIO_FILES !== 'undefined' && CUSTOM_AUDIO_FILES) {
+                    await this.loadCustomAudioFiles(CUSTOM_AUDIO_FILES);
                 }
 
                 // Load active cells data from Python
@@ -655,6 +1087,43 @@
                 // Load GeoJSON data directly from Python injection
                 if (typeof GEOJSON_DATA !== 'undefined' && GEOJSON_DATA) {
                     this.loadGeoJSONData(GEOJSON_DATA);
+                }
+            }
+
+            async loadCustomAudioFiles(customAudioFiles) {
+                if (!this.soundEngine) return;
+
+                await this.soundEngine.initializeAudio();
+
+                for (const [trackKey, audioData] of Object.entries(customAudioFiles)) {
+                    const trackIndex = parseInt(trackKey.split('_')[1]);
+                    const indicator = document.getElementById(`custom-indicator-${trackIndex}`);
+
+                    if (indicator) {
+                        indicator.style.display = 'block';
+                        indicator.textContent = 'LOADING...';
+                        indicator.className = 'custom-audio-indicator audio-loading';
+                    }
+
+                    try {
+                        const success = await this.soundEngine.loadCustomAudio(trackKey, audioData);
+
+                        if (indicator) {
+                            if (success) {
+                                indicator.textContent = 'CUSTOM';
+                                indicator.className = 'custom-audio-indicator';
+                            } else {
+                                indicator.textContent = 'ERROR';
+                                indicator.className = 'custom-audio-indicator audio-error';
+                            }
+                        }
+                    } catch (error) {
+                        console.error(`Failed to load custom audio for ${trackKey}:`, error);
+                        if (indicator) {
+                            indicator.textContent = 'ERROR';
+                            indicator.className = 'custom-audio-indicator audio-error';
+                        }
+                    }
                 }
             }
 
@@ -699,7 +1168,7 @@
 
                     this.geoData = geoJsonData;
                     this.drawMap();
-                    this.createPersistentPointMarkers(); // Create always-visible points
+                    this.createPersistentPointMarkers();
 
                 } catch (error) {
                     console.error('Error loading GeoJSON:', error);
@@ -739,12 +1208,11 @@
                     document.querySelector('.sequencer-grid').style.opacity = opacity;
                 });
 
-                // BPM control - Modified to not stop/restart music
+                // BPM control
                 document.getElementById('bpm').addEventListener('input', (e) => {
                     this.bpm = parseInt(e.target.value);
                     document.getElementById('bpmDisplay').textContent = this.bpm;
 
-                    // If playing, update the interval timing without stopping
                     if (this.isPlaying) {
                         this.updatePlaybackTiming();
                     }
@@ -772,11 +1240,9 @@
                 });
             }
 
-            // New method to update playback timing without stopping
             updatePlaybackTiming() {
                 if (!this.isPlaying) return;
 
-                // Clear current interval and restart with new timing
                 if (this.playInterval) {
                     clearInterval(this.playInterval);
                 }
@@ -816,13 +1282,17 @@
 
                 if (this.geoData) {
                     this.drawMap();
-                    this.createPersistentPointMarkers(); // Recreate points after resize
+                    this.createPersistentPointMarkers();
                 }
             }
 
             createSequencerGrid() {
                 const grid = document.getElementById('sequencerGrid');
                 grid.innerHTML = '';
+
+                // Set dynamic grid template
+                grid.style.gridTemplateColumns = `repeat(${this.gridCols}, 1fr)`;
+                grid.style.gridTemplateRows = `repeat(${this.gridRows}, 1fr)`;
 
                 for (let row = 0; row < this.gridRows; row++) {
                     for (let col = 0; col < this.gridCols; col++) {
@@ -872,9 +1342,8 @@
                 const { width, height } = this.canvas;
                 const { minLng, maxLng, minLat, maxLat } = this.gridBounds;
 
-                // Convert coordinates to pixel position using the exact same mapping as Python
                 const x = ((lng - minLng) / (maxLng - minLng)) * width;
-                const y = height - ((lat - minLat) / (maxLat - minLat)) * height; // Invert Y
+                const y = height - ((lat - minLat) / (maxLat - minLat)) * height;
 
                 return { x, y };
             }
@@ -936,7 +1405,6 @@
                     this.playInterval = null;
                 }
 
-                // Don't reset currentBeat when pausing - allows resuming from same position
                 this.clearBeatHighlights();
             }
 
@@ -967,7 +1435,6 @@
 
                         if (track.pattern[this.currentBeat]) {
                             cell.classList.add('playing');
-                            // This is playback, not a click, so don't pass isClick flag
                             this.soundEngine.playTrackSound(trackIndex, track.sound, false);
                             this.highlightRelevantPoints(trackIndex, this.currentBeat);
 
@@ -1024,13 +1491,11 @@
                 document.querySelectorAll('.current-beat').forEach(el => {
                     el.classList.remove('current-beat');
                 });
-                // Don't remove persistent point markers here
             }
 
             clearPattern() {
                 this.tracks.forEach(track => track.pattern.fill(false));
                 this.updateSequencerDisplay();
-                // Music continues playing even after clearing the pattern
             }
 
             // Cleanup on component destruction
