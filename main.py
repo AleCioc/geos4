@@ -9,6 +9,8 @@ import osmnx as ox
 from shapely.geometry import Point
 import time
 import hashlib
+import contextily as ctx
+import matplotlib.patches as patches
 
 # --- Initial Page Setup ---
 
@@ -22,10 +24,10 @@ st.set_page_config(
 # --- Real Geographic Data Processing ---
 
 @st.cache_data(show_spinner="Fetching city data from OpenStreetMap...")
-def fetch_and_process_city_data(city_name, num_points, num_steps=16, num_tracks=4):
+def fetch_and_process_city_data(city_name, num_points, generation_mode, num_steps=16, num_tracks=4):
     """
     Fetches city geometry, samples points, and maps them to a sequencer grid.
-    Returns the city GeoDataFrame, the points GeoDataFrame, and the sequencer grid.
+    Returns the city GeoDataFrame, the points GeoDataFrame, and active cells data.
     """
     try:
         # Get the city's boundary polygon
@@ -37,37 +39,56 @@ def fetch_and_process_city_data(city_name, num_points, num_steps=16, num_tracks=
 
     minx, miny, maxx, maxy = city_polygon.bounds
 
-    # Generate random points within the bounding box
+    # Generate points based on mode
     points = []
-    while len(points) < num_points:
-        p = Point(np.random.uniform(minx, maxx), np.random.uniform(miny, maxy))
-        # Check if the point is actually within the city's boundary
-        if city_polygon.contains(p):
-            points.append(p)
+    if generation_mode == "Random Points in Space":
+        while len(points) < num_points:
+            p = Point(np.random.uniform(minx, maxx), np.random.uniform(miny, maxy))
+            # Check if the point is actually within the city's boundary
+            if city_polygon.contains(p):
+                points.append(p)
 
     points_gdf = gpd.GeoDataFrame(geometry=points, crs=city_gdf.crs)
 
-    # --- Map points to sequencer grid ---
-    sequencer_grid = np.full((num_tracks, num_steps), False)
+    # --- Create active cells data structure ---
+    # Calculate grid cell dimensions in geographic coordinates
+    lng_step = (maxx - minx) / num_steps
+    lat_step = (maxy - miny) / num_tracks
 
-    # Define track boundaries based on latitude (y-axis)
-    lat_bins = np.linspace(miny, maxy, num_tracks + 1)
+    active_cells = []
 
-    for p in points:
-        # Map longitude (x-axis) to step (0-15)
-        step_index = int(((p.x - minx) / (maxx - minx)) * (num_steps - 1))
+    # For each point, determine which sequencer cell it belongs to and create active cell data
+    for point_idx, p in enumerate(points):
+        # Map longitude to step (0-15)
+        step_index = int((p.x - minx) / lng_step)
+        step_index = min(step_index, num_steps - 1)  # Ensure within bounds
 
-        # Map latitude (y-axis) to track (0-3)
-        track_index = -1
-        for i in range(num_tracks):
-            if p.y >= lat_bins[i] and p.y <= lat_bins[i + 1]:
-                track_index = i
-                break
+        # Map latitude to track (0-3) - invert the mapping so track 0 is at the top
+        track_index = num_tracks - 1 - int((p.y - miny) / lat_step)
+        track_index = max(0, min(track_index, num_tracks - 1))  # Ensure within bounds
 
-        if track_index != -1:
-            sequencer_grid[track_index, step_index] = True
+        # Create active cell entry
+        active_cells.append({
+            "track": track_index,
+            "step": step_index,
+            "point_lng": p.x,
+            "point_lat": p.y,
+            "point_id": point_idx
+        })
 
-    return city_gdf, points_gdf, sequencer_grid
+    # Also store the grid bounds for coordinate conversion in JavaScript
+    grid_bounds = {
+        "minLng": minx,
+        "maxLng": maxx,
+        "minLat": miny,
+        "maxLat": maxy,
+        "lng_step": lng_step,
+        "lat_step": lat_step,
+        "num_steps": num_steps,
+        "num_tracks": num_tracks
+    }
+
+    return city_gdf, points_gdf, {"active_cells": active_cells, "grid_bounds": grid_bounds}
 
 
 def convert_gdf_to_geojson(gdf):
@@ -100,9 +121,9 @@ def convert_gdf_to_geojson(gdf):
     }
 
 
-def create_webaudio_sequencer(version, sequencer_data, bpm, is_playing, timestamp, geojson_data=None):
+def create_webaudio_sequencer(version, active_cells_data, bpm, is_playing, timestamp, geojson_data=None):
     """
-    Loads sequencer HTML from a file and injects Python data including GeoJSON.
+    Loads sequencer HTML from a file and injects Python data including GeoJSON and active cells.
     """
     filename_map = {
         'V0': 'sequencer_1.html'
@@ -115,20 +136,21 @@ def create_webaudio_sequencer(version, sequencer_data, bpm, is_playing, timestam
     with open(filepath, 'r', encoding='utf-8') as f:
         html_template = f.read()
 
-    sequencer_json = json.dumps(sequencer_data.tolist())
+    active_cells_json = json.dumps(active_cells_data)
     geojson_json = json.dumps(geojson_data) if geojson_data else 'null'
 
-    # Inject all data including GeoJSON directly into the HTML
+    # Inject all data including active cells directly into the HTML
     injection_script = f"""
-    // --- Data Injected from Python ---
-    const IS_PLAYING = {str(is_playing).lower()};
-    const BPM = {bpm};
-    const SEQUENCER_GRID = {sequencer_json};
-    const GEOJSON_DATA = {geojson_json};
-    const COMPONENT_TIMESTAMP = "{timestamp}";
-    console.log("Component loaded at:", COMPONENT_TIMESTAMP);
-    console.log("GeoJSON data injected:", GEOJSON_DATA ? GEOJSON_DATA.features?.length + " points" : "null");
-    // --- End of Injected Data ---
+        // --- Data Injected from Python ---
+        const IS_PLAYING = {str(is_playing).lower()};
+        const BPM = {bpm};
+        const ACTIVE_CELLS_DATA = {active_cells_json};
+        const GEOJSON_DATA = {geojson_json};
+        const COMPONENT_TIMESTAMP = "{timestamp}";
+        console.log("Component loaded at:", COMPONENT_TIMESTAMP);
+        console.log("Active cells data:", ACTIVE_CELLS_DATA);
+        console.log("GeoJSON data injected:", GEOJSON_DATA ? GEOJSON_DATA.features?.length + " points" : "null");
+        // --- End of Injected Data ---
     """
 
     # Replace the placeholder with the actual data
@@ -137,31 +159,73 @@ def create_webaudio_sequencer(version, sequencer_data, bpm, is_playing, timestam
     return final_html
 
 
-def plot_real_city(city_gdf, points_gdf):
+def create_background_map(city_gdf, points_gdf):
     """
-    Uses Matplotlib to draw the city map and the sampled points.
+    Creates a background map with contextily for better visualization.
     """
     if city_gdf is None:
         return None
 
-    fig, ax = plt.subplots(figsize=(10, 8), facecolor='#0E1117')
-    ax.set_facecolor('#1E1E1E')
+    try:
+        # Convert to Web Mercator for contextily
+        city_web = city_gdf.to_crs(epsg=3857)
+        points_web = points_gdf.to_crs(epsg=3857) if points_gdf is not None else None
+
+        fig, ax = plt.subplots(figsize=(12, 8), facecolor='#f8f9fa')
+        ax.set_facecolor('#ffffff')
+
+        # Plot city boundary
+        city_web.plot(ax=ax, facecolor='none', edgecolor='#007acc', linewidth=2, alpha=0.8)
+
+        # Plot points if available
+        if points_web is not None and len(points_web) > 0:
+            points_web.plot(ax=ax, color='#ff4444', markersize=30, alpha=0.9, edgecolor='white', linewidth=1)
+
+        # Add contextily basemap - using light theme
+        try:
+            ctx.add_basemap(ax, crs=city_web.crs, source=ctx.providers.CartoDB.Positron, alpha=0.8)
+        except:
+            # Fallback if contextily fails
+            pass
+
+        # Remove axes
+        ax.set_xticks([])
+        ax.set_yticks([])
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+
+        plt.tight_layout()
+        return fig
+
+    except Exception as e:
+        # Fallback to simple plot
+        st.warning(f"Could not create contextily map: {e}. Using simple plot.")
+        return plot_simple_city(city_gdf, points_gdf)
+
+
+def plot_simple_city(city_gdf, points_gdf):
+    """
+    Fallback simple city plot without contextily.
+    """
+    if city_gdf is None:
+        return None
+
+    fig, ax = plt.subplots(figsize=(12, 8), facecolor='#f8f9fa')
+    ax.set_facecolor('#ffffff')
 
     # Plot city boundary
-    city_gdf.plot(ax=ax, facecolor='#262730', edgecolor='#00ff88', linewidth=2)
+    city_gdf.plot(ax=ax, facecolor='#f0f0f0', edgecolor='#007acc', linewidth=2)
 
     # Plot sampled points
     if points_gdf is not None:
-        points_gdf.plot(ax=ax, color='cyan', markersize=25, alpha=0.8)
+        points_gdf.plot(ax=ax, color='#ff4444', markersize=25, alpha=0.8)
 
     ax.set_xticks([])
     ax.set_yticks([])
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    plt.title("Sampled Geographic Points", color='white', fontsize=16)
+    for spine in ax.spines.values():
+        spine.set_visible(False)
 
+    plt.tight_layout()
     return fig
 
 
@@ -177,12 +241,40 @@ def generate_component_key(*args):
 # --- Main Application Logic ---
 
 def main():
-    st.title("🌍 GeoS4: Real-World Data Sequencer")
-    st.markdown("This version uses **OpenStreetMap** data to generate musical patterns from real city geographies.")
+
+    def load_css(file_name):
+        with open(file_name, 'r', encoding='utf-8') as f:
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+
+    load_css("styles.css")
+
+
+    # Add top bar
+    st.markdown("""
+    <div style="background: linear-gradient(90deg, #1f1f1f 0%, #2d2d2d 100%); 
+                padding: 15px 20px; 
+                margin: -1rem -1rem 2rem -1rem; 
+                border-bottom: 2px solid #00ff88;">
+        <h1 style="color: #00ff88; margin: 0; font-family: 'Courier New', monospace; 
+                   text-align: center; font-size: 2.5rem; font-weight: bold;">
+            🌍 GeoS4 - Geographic Sequencer
+        </h1>
+        <p style="color: #e0e0e0; margin: 5px 0 0 0; text-align: center; 
+                  font-size: 1rem; opacity: 0.8;">
+            Transform city geography into musical patterns
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
     # --- Sidebar for Controls ---
     with st.sidebar:
-        st.header("🎛️ GeoS4 Controls")
+        st.markdown("""
+        <div>
+            <h2>
+                🎛️ CONTROL PANEL
+            </h2>
+        </div>
+        """, unsafe_allow_html=True)
 
         sequencer_version = st.selectbox(
             "Select Sequencer Style",
@@ -191,15 +283,23 @@ def main():
         )
 
         st.markdown("---")
-        st.subheader("📍 Data Generation")
+        st.subheader("📍 Points Generation")
 
         city_query = st.text_input("Enter a City Name", "Bari, Italy")
+
+        generation_mode = st.selectbox(
+            "Points Generation Mode",
+            ("Random Points in Space",),
+            key='generation_mode'
+        )
+
         num_points = st.slider("Number of Sample Points", 5, 200, 50,
                                help="More points create a denser pattern.")
 
         if st.button("🏗️ Generate Pattern from City", type="primary"):
             with st.spinner(f"Fetching data for {city_query}..."):
-                city_gdf, points_gdf, sequencer_grid = fetch_and_process_city_data(city_query, num_points)
+                city_gdf, points_gdf, active_cells_data = fetch_and_process_city_data(
+                    city_query, num_points, generation_mode)
 
                 if city_gdf is not None:
                     # Convert to GeoJSON
@@ -208,55 +308,22 @@ def main():
                     # Store in session state
                     st.session_state.city_gdf = city_gdf
                     st.session_state.points_gdf = points_gdf
-                    st.session_state.sequencer_grid = sequencer_grid
+                    st.session_state.active_cells_data = active_cells_data
                     st.session_state.geojson_data = geojson_data
                     st.session_state.data_timestamp = time.time()
 
                     st.success(f"✅ Generated {num_points} points for {city_query}")
                     st.rerun()  # Force component reload with new data
 
-        st.markdown("---")
-        st.subheader("🎵 Playback")
-        bpm = st.slider("Tempo (BPM)", 60, 240, 120)
-
-        # Playback controls
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("▶️ Play", use_container_width=True):
-                st.session_state.is_playing = True
-                st.session_state.control_timestamp = time.time()
-                st.rerun()
-
-        with col2:
-            if st.button("⏹️ Stop", use_container_width=True):
-                st.session_state.is_playing = False
-                st.session_state.control_timestamp = time.time()
-                st.rerun()
-
-        # Display current status
-        is_playing = st.session_state.get('is_playing', False)
-        status_text = "🎵 Playing" if is_playing else "⏸️ Stopped"
-        st.info(f"Status: {status_text}")
-
-        st.markdown("---")
-        st.subheader("📊 Data Info")
-        if 'geojson_data' in st.session_state:
-            geojson_data = st.session_state.geojson_data
-            if geojson_data and 'features' in geojson_data:
-                st.metric("Points Loaded", len(geojson_data['features']))
-                st.metric("BPM Setting", bpm)
-        else:
-            st.info("No data loaded yet")
-
     # --- Initialize State ---
-    if 'sequencer_grid' not in st.session_state:
+    if 'active_cells_data' not in st.session_state:
         st.info("👆 Enter a city name and click 'Generate Pattern' to begin creating your geographical sequencer!")
         st.markdown("### How it works:")
         st.markdown("""
         1. **Select a city** - Enter any city name (e.g., 'Paris, France', 'Tokyo, Japan')
         2. **Generate points** - The app samples random geographic points within the city boundaries
         3. **Create patterns** - Points are mapped to a 16-step, 4-track sequencer grid
-        4. **Play music** - Each track represents different spatial features (density, clusters, edges, outliers)
+        4. **Play music** - Each track represents different spatial zones of the city
         """)
         st.stop()
 
@@ -264,60 +331,61 @@ def main():
     is_playing = st.session_state.get('is_playing', False)
     city_gdf = st.session_state.get('city_gdf')
     points_gdf = st.session_state.get('points_gdf')
-    sequencer_grid = st.session_state.get('sequencer_grid')
+    active_cells_data = st.session_state.get('active_cells_data')
     geojson_data = st.session_state.get('geojson_data')
     data_timestamp = st.session_state.get('data_timestamp', 0)
     control_timestamp = st.session_state.get('control_timestamp', 0)
 
-    # --- Main Layout ---
-    col1, col2 = st.columns([2, 1])
+    # --- Main Layout with Background ---
 
-    with col1:
-        st.subheader(f"🎹 Interactive Sequencer ({sequencer_version})")
+    # Create background map and convert to base64 for CSS background
+    background_fig = create_background_map(city_gdf, points_gdf)
 
-        # Generate unique component content based on current state
-        webaudio_component = create_webaudio_sequencer(
-            sequencer_version,
-            sequencer_grid,
-            bpm,
-            is_playing,
-            str(time.time()),  # Use current timestamp as unique identifier
-            geojson_data  # Pass GeoJSON data directly
-        )
+    if background_fig:
+        # Save figure as temporary image
+        import io
+        import base64
 
-        component_height = 900
-        components.html(
-            webaudio_component,
-            height=component_height,
-            scrolling=False
-        )
+        buf = io.BytesIO()
+        background_fig.savefig(buf, format='png', bbox_inches='tight',
+                               facecolor='#0E1117', dpi=150)
+        buf.seek(0)
+        img_data = base64.b64encode(buf.read()).decode()
+        plt.close(background_fig)
 
-    with col2:
-        st.subheader("🗺️ Geographic Data")
+        # Apply background CSS
+        background_css = f"""
+        <style>
+        .stApp {{
+            background-image: linear-gradient(rgba(248, 249, 250, 0.9), rgba(248, 249, 250, 0.9)), 
+                             url('data:image/png;base64,{img_data}');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }}
 
-        # Show the map
-        fig = plot_real_city(city_gdf, points_gdf)
-        if fig:
-            st.pyplot(fig, use_container_width=True)
-            plt.close(fig)
-        else:
-            st.info("Generate data to see the map")
+        """
+        st.markdown(background_css, unsafe_allow_html=True)
 
-        # Show some statistics
-        if points_gdf is not None:
-            st.markdown("### 📈 Pattern Statistics")
-            total_active = np.sum(sequencer_grid)
-            total_possible = sequencer_grid.size
-            density = (total_active / total_possible) * 100
+    # Sequencer component
+    bpm = 90  # Default BPM since we removed controls
 
-            st.metric("Active Steps", f"{total_active}/{total_possible}")
-            st.metric("Pattern Density", f"{density:.1f}%")
+    webaudio_component = create_webaudio_sequencer(
+        sequencer_version,
+        active_cells_data,
+        bpm,
+        is_playing,
+        str(time.time()),
+        geojson_data
+    )
 
-            # Track breakdown
-            track_names = ["🥁 Density", "🎯 Clusters", "⚡ Edges", "✨ Outliers"]
-            for i, name in enumerate(track_names):
-                count = np.sum(sequencer_grid[i])
-                st.metric(name, f"{count}/16")
+    component_height = 900
+    components.html(
+        webaudio_component,
+        height=component_height,
+        scrolling=False
+    )
 
 
 if __name__ == "__main__":

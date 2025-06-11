@@ -135,4 +135,8 @@ inter_env/*
 
 # Custom files
 
+.streamlit/secrets.toml
+
+backup
 cache
+
