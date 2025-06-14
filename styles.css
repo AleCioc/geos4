@@ -42,14 +42,15 @@ html, body {
 }
 
 /* Remove default Streamlit header */
-header[data-testid="stHeader"] {
-    display: none !important;
-}
+/* header[data-testid="stHeader"] {
+/*     display: none !important;
+/* }
 
 /* Hide Streamlit menu and footer */
-#MainMenu, footer, .stDeployButton {
-    visibility: hidden !important;
-}
+/* #MainMenu, footer, .stDeployButton {
+/*     visibility: hidden !important;
+/* }
+
 
 /* Main Content Styling */
 .main .block-container {

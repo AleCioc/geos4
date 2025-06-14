@@ -23,7 +23,7 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
-            padding: 20px;
+            padding: 10px;
         }
 
         .sequencer-container {
@@ -33,7 +33,7 @@
             backdrop-filter: blur(10px);
             border-radius: 10px;
             overflow: hidden;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             position: relative;
         }
 
@@ -51,8 +51,8 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            padding: 10px;
+            gap: 6px;
+            padding: 8px;
             border-bottom: 1px solid #333;
             min-height: 60px;
         }
@@ -62,8 +62,8 @@
         }
 
         .track-color {
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             border-radius: 6px;
             border: 2px solid rgba(255, 255, 255, 0.3);
             flex-shrink: 0;
@@ -74,9 +74,9 @@
             border: 1px solid #555;
             border-radius: 4px;
             color: #e0e0e0;
-            padding: 4px 6px;
-            font-size: 0.75em;
-            width: 90px;
+            padding: 3px 5px;
+            font-size: 0.7em;
+            width: 85px;
             text-align: center;
         }
 
@@ -87,16 +87,16 @@
         }
 
         .track-label {
-            font-size: 0.7em;
+            font-size: 0.65em;
             color: #b0b0b0;
             text-align: center;
         }
 
         .custom-audio-indicator {
-            font-size: 0.6em;
+            font-size: 0.55em;
             color: #00ff88;
             background: rgba(0, 255, 136, 0.2);
-            padding: 2px 4px;
+            padding: 1px 3px;
             border-radius: 3px;
             margin-top: 2px;
         }
@@ -106,10 +106,10 @@
             border: 1px solid #555;
             border-radius: 4px;
             color: #e0e0e0;
-            padding: 4px 8px;
-            font-size: 0.7em;
+            padding: 3px 6px;
+            font-size: 0.6em;
             cursor: pointer;
-            margin-top: 4px;
+            margin-top: 3px;
             transition: all 0.2s ease;
         }
 
@@ -120,6 +120,24 @@
 
         .file-input {
             display: none;
+        }
+
+        .randomize-button {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            border: 1px solid #ff4444;
+            border-radius: 4px;
+            color: white;
+            padding: 3px 6px;
+            font-size: 0.6em;
+            cursor: pointer;
+            margin-top: 2px;
+            transition: all 0.2s ease;
+            font-weight: bold;
+        }
+
+        .randomize-button:hover {
+            background: linear-gradient(45deg, #ff5252, #e53935);
+            transform: scale(1.05);
         }
 
         .grid-and-map-container {
@@ -191,42 +209,42 @@
             backdrop-filter: blur(15px);
             border: 1px solid #333;
             border-radius: 10px;
-            padding: 15px;
+            padding: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 20px;
-            min-height: 60px;
+            gap: 15px;
+            min-height: 50px;
         }
 
         .control-group {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
         }
 
         .control-group h4 {
             color: #00ff88;
-            font-size: 0.9em;
-            margin-right: 10px;
+            font-size: 0.8em;
+            margin-right: 8px;
             white-space: nowrap;
         }
 
         .transport-controls {
             display: flex;
-            gap: 10px;
+            gap: 8px;
         }
 
         .transport-btn {
-            padding: 8px 12px;
+            padding: 6px 10px;
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid #555;
             border-radius: 6px;
             color: #e0e0e0;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-size: 0.9em;
-            min-width: 60px;
+            font-size: 0.8em;
+            min-width: 50px;
         }
 
         .transport-btn:hover {
@@ -250,17 +268,17 @@
         .slider-container {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .slider-container label {
             color: #b0b0b0;
-            font-size: 0.8em;
+            font-size: 0.7em;
             white-space: nowrap;
         }
 
         .slider {
-            width: 80px;
+            width: 70px;
             height: 4px;
             border-radius: 2px;
             background: #333;
@@ -270,8 +288,8 @@
 
         .slider::-webkit-slider-thumb {
             appearance: none;
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             background: #00ff88;
             cursor: pointer;
@@ -280,9 +298,9 @@
 
         .bpm-display {
             color: #00ff88;
-            font-size: 0.9em;
+            font-size: 0.8em;
             font-weight: bold;
-            min-width: 60px;
+            min-width: 50px;
         }
 
         .point-marker {
@@ -315,8 +333,8 @@
         .mute-indicator {
             display: flex;
             align-items: center;
-            gap: 5px;
-            font-size: 0.8em;
+            gap: 4px;
+            font-size: 0.7em;
             color: #b0b0b0;
         }
 
@@ -325,8 +343,8 @@
         }
 
         .checkbox {
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
             border: 1px solid #555;
             border-radius: 3px;
             background: rgba(255, 255, 255, 0.1);
@@ -343,19 +361,86 @@
             content: '✓';
             position: absolute;
             color: #000;
-            font-size: 12px;
+            font-size: 10px;
             top: -2px;
-            left: 2px;
+            left: 1px;
         }
 
         .audio-loading {
             color: #ff9800;
-            font-size: 0.6em;
+            font-size: 0.55em;
         }
 
         .audio-error {
             color: #ff4444;
-            font-size: 0.6em;
+            font-size: 0.55em;
+        }
+
+        /* Grid Dimension Controls */
+        .grid-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .dimension-control {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .dimension-input {
+            width: 40px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #555;
+            border-radius: 4px;
+            color: #e0e0e0;
+            text-align: center;
+            font-size: 0.8em;
+        }
+
+        .dimension-input:focus {
+            border-color: #00ff88;
+            outline: none;
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .dimension-btn {
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #555;
+            border-radius: 3px;
+            color: #e0e0e0;
+            cursor: pointer;
+            font-size: 0.7em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .dimension-btn:hover {
+            background: rgba(0, 255, 136, 0.2);
+            border-color: #00ff88;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 800px) {
+            .controls-bar {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .control-group {
+                gap: 8px;
+            }
+
+            .transport-btn {
+                min-width: 40px;
+                font-size: 0.7em;
+            }
         }
     </style>
 </head>
@@ -374,7 +459,7 @@
 
         <div class="controls-bar">
             <div class="control-group">
-                <h4>🎵 Music</h4>
+                <h4>🎵 Transport</h4>
                 <div class="transport-controls">
                     <button class="transport-btn" id="playButton">▶ Play</button>
                     <button class="transport-btn" id="stopButton">⏹ Stop</button>
@@ -391,9 +476,33 @@
             </div>
 
             <div class="control-group">
+                <h4>🎛️ Grid</h4>
+                <div class="grid-controls">
+                    <div class="dimension-control">
+                        <label>Steps</label>
+                        <button class="dimension-btn" id="stepsDown">-</button>
+                        <input type="number" class="dimension-input" id="stepsInput" min="8" max="32" value="16">
+                        <button class="dimension-btn" id="stepsUp">+</button>
+                    </div>
+                    <div class="dimension-control">
+                        <label>Tracks</label>
+                        <button class="dimension-btn" id="tracksDown">-</button>
+                        <input type="number" class="dimension-input" id="tracksInput" min="2" max="8" value="4">
+                        <button class="dimension-btn" id="tracksUp">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h4>🎲 Random</h4>
+                <button class="transport-btn" id="randomizeSoundsButton">🎲 Sounds</button>
+                <button class="transport-btn" id="randomizePatternButton">🎲 Pattern</button>
+            </div>
+
+            <div class="control-group">
                 <h4>🎚️ Visual</h4>
                 <div class="slider-container">
-                    <label>Grid Opacity</label>
+                    <label>Grid</label>
                     <input type="range" class="slider" id="gridOpacity" min="0" max="100" value="10">
                 </div>
             </div>
@@ -401,1125 +510,31 @@
             <div class="control-group">
                 <div class="mute-indicator" id="muteIndicator">
                     <div class="checkbox" id="muteCheckbox"></div>
-                    <span>Mute Clicks</span>
+                    <span>Mute</span>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        /**
-         * Enhanced GeoS4 Sound Engine with Custom Audio Support
-         */
-        class GeoS4SoundEngine {
-            constructor() {
-                this.audioContext = null;
-                this.masterGain = null;
-                this.isAudioInitialized = false;
-                this.clickMuted = false;
-                this.customAudioBuffers = {}; // Store loaded custom audio buffers
-                this.loadingAudio = new Set(); // Track which audio files are loading
-            }
-
-            async initializeAudio() {
-                if (this.isAudioInitialized) return;
-
-                try {
-                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    this.masterGain = this.audioContext.createGain();
-                    this.masterGain.connect(this.audioContext.destination);
-                    this.masterGain.gain.value = 0.7;
-                    this.isAudioInitialized = true;
-                    return true;
-                } catch (error) {
-                    console.error('Failed to initialize audio:', error);
-                    return false;
-                }
-            }
-
-            async loadCustomAudio(trackKey, audioData) {
-                if (!this.audioContext) {
-                    await this.initializeAudio();
-                }
-
-                if (!audioData || this.loadingAudio.has(trackKey)) {
-                    return false;
-                }
-
-                this.loadingAudio.add(trackKey);
-
-                try {
-                    // Convert base64 to ArrayBuffer
-                    const binaryString = atob(audioData.data);
-                    const bytes = new Uint8Array(binaryString.length);
-                    for (let i = 0; i < binaryString.length; i++) {
-                        bytes[i] = binaryString.charCodeAt(i);
-                    }
-
-                    // Decode audio data
-                    const audioBuffer = await this.audioContext.decodeAudioData(bytes.buffer);
-                    this.customAudioBuffers[trackKey] = audioBuffer;
-
-                    console.log(`Custom audio loaded for ${trackKey}:`, audioData.filename);
-                    this.loadingAudio.delete(trackKey);
-                    return true;
-
-                } catch (error) {
-                    console.error(`Failed to load custom audio for ${trackKey}:`, error);
-                    this.loadingAudio.delete(trackKey);
-                    return false;
-                }
-            }
-
-            setClickMuted(muted) {
-                this.clickMuted = muted;
-            }
-
-            async playTrackSound(trackIndex, soundType = null, isClick = false) {
-                // Only apply mute to click sounds
-                if (isClick && this.clickMuted) return;
-
-                const trackKey = `track_${trackIndex}`;
-
-                // Try to play custom audio first
-                if (this.customAudioBuffers[trackKey]) {
-                    this.playCustomAudio(trackKey);
-                    return;
-                }
-
-                // Fallback to default sounds
-                const defaultSounds = ['kick', 'snare', 'hihat', 'perc'];
-                const sound = soundType || defaultSounds[trackIndex % defaultSounds.length];
-                this.playSound(sound);
-            }
-
-            playCustomAudio(trackKey) {
-                if (!this.audioContext || !this.customAudioBuffers[trackKey]) return;
-
-                try {
-                    const source = this.audioContext.createBufferSource();
-                    const gainNode = this.audioContext.createGain();
-
-                    source.buffer = this.customAudioBuffers[trackKey];
-                    source.connect(gainNode);
-                    gainNode.connect(this.masterGain);
-
-                    // Set volume for custom audio
-                    gainNode.gain.value = 0.8;
-
-                    source.start(0);
-                } catch (error) {
-                    console.error(`Error playing custom audio for ${trackKey}:`, error);
-                }
-            }
-
-            playSound(soundType) {
-                if (!this.audioContext) return;
-
-                switch(soundType) {
-                    case 'kick':
-                        this.playKick();
-                        break;
-                    case 'snare':
-                        this.playSnare();
-                        break;
-                    case 'hihat':
-                        this.playHiHat();
-                        break;
-                    case 'perc':
-                        this.playPerc();
-                        break;
-                    case 'clap':
-                        this.playClap();
-                        break;
-                    case 'cymbal':
-                        this.playCymbal();
-                        break;
-                    case 'tom':
-                        this.playTom();
-                        break;
-                    case 'rim':
-                        this.playRim();
-                        break;
-                    case 'cowbell':
-                        this.playCowbell();
-                        break;
-                    case 'shaker':
-                        this.playShaker();
-                        break;
-                    case 'bass':
-                        this.playBass();
-                        break;
-                    default:
-                        this.playPerc();
-                        break;
-                }
-            }
-
-            // Kick Drum - Low frequency oscillator with envelope
-            playKick() {
-                const now = this.audioContext.currentTime;
-                const osc = this.audioContext.createOscillator();
-                const oscGain = this.audioContext.createGain();
-
-                osc.connect(oscGain);
-                oscGain.connect(this.masterGain);
-
-                // Frequency sweep from 60Hz to very low
-                osc.frequency.setValueAtTime(60, now);
-                osc.frequency.exponentialRampToValueAtTime(0.1, now + 0.5);
-
-                // Volume envelope
-                oscGain.gain.setValueAtTime(1, now);
-                oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-
-                osc.start(now);
-                osc.stop(now + 0.5);
-            }
-
-            // Snare Drum - Tone + noise combination
-            playSnare() {
-                const now = this.audioContext.currentTime;
-
-                // Tone component
-                const osc = this.audioContext.createOscillator();
-                const oscGain = this.audioContext.createGain();
-
-                osc.connect(oscGain);
-                oscGain.connect(this.masterGain);
-
-                osc.frequency.value = 200;
-                oscGain.gain.setValueAtTime(0.3, now);
-                oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-
-                osc.start(now);
-                osc.stop(now + 0.2);
-
-                // Noise component
-                const bufferSize = this.audioContext.sampleRate * 0.2;
-                const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
-                const output = buffer.getChannelData(0);
-
-                for (let i = 0; i < bufferSize; i++) {
-                    output[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 1);
-                }
-
-                const noise = this.audioContext.createBufferSource();
-                const noiseGain = this.audioContext.createGain();
-                const noiseFilter = this.audioContext.createBiquadFilter();
-
-                noise.buffer = buffer;
-                noise.connect(noiseFilter);
-                noiseFilter.connect(noiseGain);
-                noiseGain.connect(this.masterGain);
-
-                noiseFilter.type = 'bandpass';
-                noiseFilter.frequency.value = 1000;
-                noiseFilter.Q.value = 0.5;
-
-                noiseGain.gain.setValueAtTime(0.8, now);
-                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-
-                noise.start(now);
-            }
-
-            // Hi-Hat - High frequency filtered noise
-            playHiHat() {
-                const now = this.audioContext.currentTime;
-
-                const bufferSize = this.audioContext.sampleRate * 0.1;
-                const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
-                const output = buffer.getChannelData(0);
-
-                for (let i = 0; i < bufferSize; i++) {
-                    output[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 3);
-                }
-
-                const noise = this.audioContext.createBufferSource();
-                const noiseGain = this.audioContext.createGain();
-                const noiseFilter = this.audioContext.createBiquadFilter();
-
-                noise.buffer = buffer;
-                noise.connect(noiseFilter);
-                noiseFilter.connect(noiseGain);
-                noiseGain.connect(this.masterGain);
-
-                noiseFilter.type = 'highpass';
-                noiseFilter.frequency.value = 8000;
-
-                noiseGain.gain.setValueAtTime(0.3, now);
-                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-
-                noise.start(now);
-            }
-
-            // Percussion - Tuned oscillator with bandpass filter
-            playPerc() {
-                const now = this.audioContext.currentTime;
-
-                const osc = this.audioContext.createOscillator();
-                const oscGain = this.audioContext.createGain();
-                const filter = this.audioContext.createBiquadFilter();
-
-                osc.connect(filter);
-                filter.connect(oscGain);
-                oscGain.connect(this.masterGain);
-
-                // Frequency sweep from 800Hz down
-                osc.frequency.setValueAtTime(800, now);
-                osc.frequency.exponentialRampToValueAtTime(100, now + 0.15);
-
-                filter.type = 'bandpass';
-                filter.frequency.value = 1200;
-                filter.Q.value = 5;
-
-                oscGain.gain.setValueAtTime(0.4, now);
-                oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-
-                osc.start(now);
-                osc.stop(now + 0.15);
-            }
-
-            // Clap - Sharp noise burst with envelope
-            playClap() {
-                const now = this.audioContext.currentTime;
-
-                const bufferSize = this.audioContext.sampleRate * 0.15;
-                const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
-                const output = buffer.getChannelData(0);
-
-                for (let i = 0; i < bufferSize; i++) {
-                    output[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
-                }
-
-                const noise = this.audioContext.createBufferSource();
-                const noiseGain = this.audioContext.createGain();
-                const noiseFilter = this.audioContext.createBiquadFilter();
-
-                noise.buffer = buffer;
-                noise.connect(noiseFilter);
-                noiseFilter.connect(noiseGain);
-                noiseGain.connect(this.masterGain);
-
-                noiseFilter.type = 'bandpass';
-                noiseFilter.frequency.value = 1500;
-                noiseFilter.Q.value = 2;
-
-                noiseGain.gain.setValueAtTime(0.6, now);
-                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-
-                noise.start(now);
-            }
-
-            // Cymbal - Metallic crash sound
-            playCymbal() {
-                const now = this.audioContext.currentTime;
-
-                const bufferSize = this.audioContext.sampleRate * 1.5;
-                const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
-                const output = buffer.getChannelData(0);
-
-                for (let i = 0; i < bufferSize; i++) {
-                    output[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 0.5);
-                }
-
-                const noise = this.audioContext.createBufferSource();
-                const noiseGain = this.audioContext.createGain();
-                const noiseFilter = this.audioContext.createBiquadFilter();
-
-                noise.buffer = buffer;
-                noise.connect(noiseFilter);
-                noiseFilter.connect(noiseGain);
-                noiseGain.connect(this.masterGain);
-
-                noiseFilter.type = 'highpass';
-                noiseFilter.frequency.value = 3000;
-
-                noiseGain.gain.setValueAtTime(0.4, now);
-                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 1.5);
-
-                noise.start(now);
-            }
-
-            // Tom - Pitched drum sound
-            playTom() {
-                const now = this.audioContext.currentTime;
-
-                const osc = this.audioContext.createOscillator();
-                const oscGain = this.audioContext.createGain();
-
-                osc.connect(oscGain);
-                oscGain.connect(this.masterGain);
-
-                // Frequency sweep from 150Hz down
-                osc.frequency.setValueAtTime(150, now);
-                osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
-
-                oscGain.gain.setValueAtTime(0.6, now);
-                oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-
-                osc.start(now);
-                osc.stop(now + 0.3);
-            }
-
-            // Rim Shot - Sharp attack sound
-            playRim() {
-                const now = this.audioContext.currentTime;
-
-                const osc = this.audioContext.createOscillator();
-                const oscGain = this.audioContext.createGain();
-                const filter = this.audioContext.createBiquadFilter();
-
-                osc.connect(filter);
-                filter.connect(oscGain);
-                oscGain.connect(this.masterGain);
-
-                osc.frequency.value = 2000;
-                filter.type = 'bandpass';
-                filter.frequency.value = 2000;
-                filter.Q.value = 10;
-
-                oscGain.gain.setValueAtTime(0.3, now);
-                oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
-
-                osc.start(now);
-                osc.stop(now + 0.05);
-            }
-
-            // Cowbell - Metallic bell sound
-            playCowbell() {
-                const now = this.audioContext.currentTime;
-
-                const osc1 = this.audioContext.createOscillator();
-                const osc2 = this.audioContext.createOscillator();
-                const oscGain = this.audioContext.createGain();
-
-                osc1.connect(oscGain);
-                osc2.connect(oscGain);
-                oscGain.connect(this.masterGain);
-
-                osc1.frequency.value = 800;
-                osc2.frequency.value = 540;
-
-                oscGain.gain.setValueAtTime(0.3, now);
-                oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
-
-                osc1.start(now);
-                osc2.start(now);
-                osc1.stop(now + 0.25);
-                osc2.stop(now + 0.25);
-            }
-
-            // Shaker - High frequency noise
-            playShaker() {
-                const now = this.audioContext.currentTime;
-
-                const bufferSize = this.audioContext.sampleRate * 0.08;
-                const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
-                const output = buffer.getChannelData(0);
-
-                for (let i = 0; i < bufferSize; i++) {
-                    output[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 4);
-                }
-
-                const noise = this.audioContext.createBufferSource();
-                const noiseGain = this.audioContext.createGain();
-                const noiseFilter = this.audioContext.createBiquadFilter();
-
-                noise.buffer = buffer;
-                noise.connect(noiseFilter);
-                noiseFilter.connect(noiseGain);
-                noiseGain.connect(this.masterGain);
-
-                noiseFilter.type = 'highpass';
-                noiseFilter.frequency.value = 10000;
-
-                noiseGain.gain.setValueAtTime(0.2, now);
-                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
-
-                noise.start(now);
-            }
-
-            // Bass - Low frequency tone
-            playBass() {
-                const now = this.audioContext.currentTime;
-
-                const osc = this.audioContext.createOscillator();
-                const oscGain = this.audioContext.createGain();
-                const filter = this.audioContext.createBiquadFilter();
-
-                osc.connect(filter);
-                filter.connect(oscGain);
-                oscGain.connect(this.masterGain);
-
-                osc.frequency.setValueAtTime(80, now);
-                osc.frequency.exponentialRampToValueAtTime(40, now + 0.4);
-
-                filter.type = 'lowpass';
-                filter.frequency.value = 200;
-
-                oscGain.gain.setValueAtTime(0.5, now);
-                oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
-
-                osc.start(now);
-                osc.stop(now + 0.4);
-            }
-
-            // Cleanup
-            destroy() {
-                if (this.audioContext && this.audioContext.state !== 'closed') {
-                    this.audioContext.close();
-                }
-            }
-        }
-
         // PYTHON_DATA_INJECTION_POINT
 
-        class GeoJSONSequencer {
-            constructor() {
-                this.geoData = null;
-                this.gridBounds = null;
-                this.canvas = document.getElementById('mapCanvas');
-                this.ctx = this.canvas.getContext('2d');
-                this.isPlaying = false;
-                this.currentBeat = 0;
-                this.bpm = 120;
-                this.playInterval = null;
-                this.persistentPointMarkers = [];
-
-                // Default grid configuration
-                this.gridCols = 16;
-                this.gridRows = 4;
-
-                // Default track configuration
-                this.tracks = [];
-
-                // Audio setup using external sound engine
-                this.soundEngine = new GeoS4SoundEngine();
-                this.isAudioInitialized = false;
-
-                this.setupEventListeners();
-                this.resizeCanvas();
-
-                // Apply injected settings from Python and load data
-                this.applyInjectedSettings();
-
-                window.addEventListener('resize', () => this.resizeCanvas());
-            }
-
-            initializeTracks() {
-                const trackColors = [
-                    '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4',
-                    '#feca57', '#ff9ff3', '#54a0ff', '#5f27cd',
-                    '#00d2d3', '#ff9f43', '#10ac84', '#ee5a24'
-                ];
-
-                const trackSounds = ['kick', 'snare', 'hihat', 'perc', 'clap', 'cymbal', 'tom', 'rim'];
-
-                this.tracks = [];
-                for (let i = 0; i < this.gridRows; i++) {
-                    this.tracks.push({
-                        name: `Track ${i + 1}`,
-                        color: trackColors[i % trackColors.length],
-                        pattern: new Array(this.gridCols).fill(false),
-                        sound: trackSounds[i % trackSounds.length]
-                    });
-                }
-            }
-
-            createTrackControls() {
-                const container = document.getElementById('trackControls');
-                container.innerHTML = '';
-
-                this.tracks.forEach((track, index) => {
-                    const control = document.createElement('div');
-                    control.className = 'track-control';
-
-                    const label = document.createElement('div');
-                    label.className = 'track-label';
-                    label.textContent = `Track ${index + 1}`;
-
-                    const colorBox = document.createElement('div');
-                    colorBox.className = 'track-color';
-                    colorBox.style.backgroundColor = track.color;
-
-                    const select = document.createElement('select');
-                    select.className = 'track-select';
-                    select.innerHTML = `
-                        <option value="kick" ${track.sound === 'kick' ? 'selected' : ''}>Kick</option>
-                        <option value="snare" ${track.sound === 'snare' ? 'selected' : ''}>Snare</option>
-                        <option value="hihat" ${track.sound === 'hihat' ? 'selected' : ''}>Hi-Hat</option>
-                        <option value="perc" ${track.sound === 'perc' ? 'selected' : ''}>Perc</option>
-                        <option value="clap" ${track.sound === 'clap' ? 'selected' : ''}>Clap</option>
-                        <option value="cymbal" ${track.sound === 'cymbal' ? 'selected' : ''}>Cymbal</option>
-                        <option value="tom" ${track.sound === 'tom' ? 'selected' : ''}>Tom</option>
-                        <option value="rim" ${track.sound === 'rim' ? 'selected' : ''}>Rim</option>
-                        <option value="cowbell" ${track.sound === 'cowbell' ? 'selected' : ''}>Cowbell</option>
-                        <option value="shaker" ${track.sound === 'shaker' ? 'selected' : ''}>Shaker</option>
-                        <option value="bass" ${track.sound === 'bass' ? 'selected' : ''}>Bass</option>
-                        <option value="custom" data-custom="true">🎵 Upload Custom</option>
-                    `;
-
-                    select.addEventListener('change', (e) => {
-                        if (e.target.value === 'custom') {
-                            this.openFileUpload(index);
-                            // Reset to previous value temporarily
-                            e.target.value = this.tracks[index].sound;
-                        } else {
-                            this.tracks[index].sound = e.target.value;
-                        }
-                    });
-
-                    // Custom audio indicator
-                    const customIndicator = document.createElement('div');
-                    customIndicator.className = 'custom-audio-indicator';
-                    customIndicator.id = `custom-indicator-${index}`;
-                    customIndicator.style.display = 'none';
-                    customIndicator.textContent = 'CUSTOM';
-
-                    // Hidden file input
-                    const fileInput = document.createElement('input');
-                    fileInput.type = 'file';
-                    fileInput.className = 'file-input';
-                    fileInput.accept = '.mp3,.wav,.ogg,.m4a,.aac';
-                    fileInput.id = `file-input-${index}`;
-                    fileInput.addEventListener('change', (e) => {
-                        this.handleFileUpload(e, index);
-                    });
-
-                    control.appendChild(label);
-                    control.appendChild(colorBox);
-                    control.appendChild(select);
-                    control.appendChild(customIndicator);
-                    control.appendChild(fileInput);
-                    container.appendChild(control);
-                });
-            }
-
-            openFileUpload(trackIndex) {
-                const fileInput = document.getElementById(`file-input-${trackIndex}`);
-                if (fileInput) {
-                    fileInput.click();
-                }
-            }
-
-            async handleFileUpload(event, trackIndex) {
-                const file = event.target.files[0];
-                if (!file) return;
-
-                const trackKey = `track_${trackIndex}`;
-                const indicator = document.getElementById(`custom-indicator-${trackIndex}`);
-
-                if (indicator) {
-                    indicator.style.display = 'block';
-                    indicator.textContent = 'LOADING...';
-                    indicator.className = 'custom-audio-indicator audio-loading';
-                }
-
-                try {
-                    // Read file as ArrayBuffer
-                    const arrayBuffer = await file.arrayBuffer();
-
-                    // Create audio data object
-                    const audioData = {
-                        data: btoa(String.fromCharCode(...new Uint8Array(arrayBuffer))),
-                        mime_type: file.type || 'audio/mpeg',
-                        filename: file.name,
-                        size: file.size
-                    };
-
-                    // Load the audio
-                    const success = await this.soundEngine.loadCustomAudio(trackKey, audioData);
-
-                    if (indicator) {
-                        if (success) {
-                            indicator.textContent = file.name.length > 8 ? file.name.substring(0, 8) + '...' : file.name;
-                            indicator.className = 'custom-audio-indicator';
-                            indicator.title = file.name; // Show full name on hover
-                        } else {
-                            indicator.textContent = 'ERROR';
-                            indicator.className = 'custom-audio-indicator audio-error';
-                        }
-                    }
-
-                    // Clear the file input for future uploads
-                    event.target.value = '';
-
-                } catch (error) {
-                    console.error(`Failed to load custom audio for track ${trackIndex}:`, error);
-                    if (indicator) {
-                        indicator.textContent = 'ERROR';
-                        indicator.className = 'custom-audio-indicator audio-error';
-                    }
-                }
-            }
-
-            async applyInjectedSettings() {
-                // Apply grid configuration from Python
-                if (typeof GRID_CONFIG !== 'undefined' && GRID_CONFIG) {
-                    this.gridCols = GRID_CONFIG.num_steps || 16;
-                    this.gridRows = GRID_CONFIG.num_tracks || 4;
-                    console.log(`Grid configuration: ${this.gridCols} × ${this.gridRows}`);
-                }
-
-                // Initialize tracks based on grid configuration
-                this.initializeTracks();
-                this.createSequencerGrid();
-                this.createTrackControls();
-
-                // Apply Python-injected settings if they exist
-                if (typeof BPM !== 'undefined') {
-                    this.bpm = BPM;
-                    document.getElementById('bpm').value = BPM;
-                    document.getElementById('bpmDisplay').textContent = BPM;
-                }
-
-                // Load custom audio files from Python
-                if (typeof CUSTOM_AUDIO_FILES !== 'undefined' && CUSTOM_AUDIO_FILES) {
-                    await this.loadCustomAudioFiles(CUSTOM_AUDIO_FILES);
-                }
-
-                // Load active cells data from Python
-                if (typeof ACTIVE_CELLS_DATA !== 'undefined' && ACTIVE_CELLS_DATA) {
-                    this.loadActiveCellsData(ACTIVE_CELLS_DATA);
-                }
-
-                // Load GeoJSON data directly from Python injection
-                if (typeof GEOJSON_DATA !== 'undefined' && GEOJSON_DATA) {
-                    this.loadGeoJSONData(GEOJSON_DATA);
-                }
-            }
-
-            async loadCustomAudioFiles(customAudioFiles) {
-                if (!this.soundEngine) return;
-
-                await this.soundEngine.initializeAudio();
-
-                for (const [trackKey, audioData] of Object.entries(customAudioFiles)) {
-                    const trackIndex = parseInt(trackKey.split('_')[1]);
-                    const indicator = document.getElementById(`custom-indicator-${trackIndex}`);
-
-                    if (indicator) {
-                        indicator.style.display = 'block';
-                        indicator.textContent = 'LOADING...';
-                        indicator.className = 'custom-audio-indicator audio-loading';
-                    }
-
-                    try {
-                        const success = await this.soundEngine.loadCustomAudio(trackKey, audioData);
-
-                        if (indicator) {
-                            if (success) {
-                                indicator.textContent = 'CUSTOM';
-                                indicator.className = 'custom-audio-indicator';
-                            } else {
-                                indicator.textContent = 'ERROR';
-                                indicator.className = 'custom-audio-indicator audio-error';
-                            }
-                        }
-                    } catch (error) {
-                        console.error(`Failed to load custom audio for ${trackKey}:`, error);
-                        if (indicator) {
-                            indicator.textContent = 'ERROR';
-                            indicator.className = 'custom-audio-indicator audio-error';
-                        }
-                    }
-                }
-            }
-
-            loadActiveCellsData(activeCellsData) {
-                try {
-                    // Clear current pattern
-                    this.tracks.forEach(track => track.pattern.fill(false));
-
-                    // Store grid bounds for coordinate conversion
-                    this.gridBounds = activeCellsData.grid_bounds;
-
-                    // Activate cells based on the active_cells data
-                    activeCellsData.active_cells.forEach(cell => {
-                        if (cell.track >= 0 && cell.track < this.gridRows &&
-                            cell.step >= 0 && cell.step < this.gridCols) {
-                            this.tracks[cell.track].pattern[cell.step] = true;
-                        }
-                    });
-
-                    this.updateSequencerDisplay();
-                    console.log('Loaded active cells:', activeCellsData.active_cells.length);
-
-                } catch (error) {
-                    console.error('Error loading active cells data:', error);
-                }
-            }
-
-            loadGeoJSONData(geoJsonData) {
-                try {
-                    if (!geoJsonData.features || geoJsonData.features.length === 0) {
-                        throw new Error('No features found in GeoJSON');
-                    }
-
-                    // Filter for point features only
-                    geoJsonData.features = geoJsonData.features.filter(
-                        feature => feature.geometry && feature.geometry.type === 'Point'
-                    );
-
-                    if (geoJsonData.features.length === 0) {
-                        throw new Error('No point features found in GeoJSON');
-                    }
-
-                    this.geoData = geoJsonData;
-                    this.drawMap();
-                    this.createPersistentPointMarkers();
-
-                } catch (error) {
-                    console.error('Error loading GeoJSON:', error);
-                }
-            }
-
-            createPersistentPointMarkers() {
-                // Remove any existing persistent markers
-                this.persistentPointMarkers.forEach(marker => {
-                    if (marker.parentElement) {
-                        marker.parentElement.removeChild(marker);
-                    }
-                });
-                this.persistentPointMarkers = [];
-
-                if (!this.geoData || !this.gridBounds) return;
-
-                // Create persistent point markers that are always visible
-                this.geoData.features.forEach(feature => {
-                    const [lng, lat] = feature.geometry.coordinates;
-                    const { x, y } = this.coordsToPixel(lng, lat);
-
-                    const marker = document.createElement('div');
-                    marker.className = 'point-marker';
-                    marker.style.left = `${x}px`;
-                    marker.style.top = `${y}px`;
-
-                    this.canvas.parentElement.appendChild(marker);
-                    this.persistentPointMarkers.push(marker);
-                });
-            }
-
-            setupEventListeners() {
-                // Grid opacity control
-                document.getElementById('gridOpacity').addEventListener('input', (e) => {
-                    const opacity = e.target.value / 100;
-                    document.querySelector('.sequencer-grid').style.opacity = opacity;
-                });
-
-                // BPM control
-                document.getElementById('bpm').addEventListener('input', (e) => {
-                    this.bpm = parseInt(e.target.value);
-                    document.getElementById('bpmDisplay').textContent = this.bpm;
-
-                    if (this.isPlaying) {
-                        this.updatePlaybackTiming();
-                    }
-                });
-
-                // Transport controls
-                document.getElementById('playButton').addEventListener('click', async () => {
-                    if (!this.isAudioInitialized) {
-                        await this.initializeAudio();
-                    }
-                    this.togglePlayback();
-                });
-
-                document.getElementById('stopButton').addEventListener('click', () => {
-                    this.stop();
-                });
-
-                document.getElementById('clearButton').addEventListener('click', () => {
-                    this.clearPattern();
-                });
-
-                // Mute control
-                document.getElementById('muteCheckbox').addEventListener('click', () => {
-                    this.toggleMute();
-                });
-            }
-
-            updatePlaybackTiming() {
-                if (!this.isPlaying) return;
-
-                if (this.playInterval) {
-                    clearInterval(this.playInterval);
-                }
-
-                const interval = (60 / this.bpm / 4) * 1000; // 16th notes
-                this.playInterval = setInterval(() => {
-                    this.step();
-                }, interval);
-            }
-
-            async initializeAudio() {
-                if (this.isAudioInitialized) return;
-
-                try {
-                    const success = await this.soundEngine.initializeAudio();
-                    this.isAudioInitialized = success;
-                } catch (error) {
-                    console.error('Failed to initialize audio:', error);
-                }
-            }
-
-            toggleMute() {
-                const checkbox = document.getElementById('muteCheckbox');
-                const indicator = document.getElementById('muteIndicator');
-
-                checkbox.classList.toggle('checked');
-                indicator.classList.toggle('muted');
-
-                const isMuted = checkbox.classList.contains('checked');
-                this.soundEngine.setClickMuted(isMuted);
-            }
-
-            resizeCanvas() {
-                const container = this.canvas.parentElement;
-                this.canvas.width = container.clientWidth;
-                this.canvas.height = container.clientHeight;
-
-                if (this.geoData) {
-                    this.drawMap();
-                    this.createPersistentPointMarkers();
-                }
-            }
-
-            createSequencerGrid() {
-                const grid = document.getElementById('sequencerGrid');
-                grid.innerHTML = '';
-
-                // Set dynamic grid template
-                grid.style.gridTemplateColumns = `repeat(${this.gridCols}, 1fr)`;
-                grid.style.gridTemplateRows = `repeat(${this.gridRows}, 1fr)`;
-
-                for (let row = 0; row < this.gridRows; row++) {
-                    for (let col = 0; col < this.gridCols; col++) {
-                        const cell = document.createElement('div');
-                        cell.className = 'sequencer-cell';
-                        cell.style.setProperty('--track-color', this.tracks[row].color);
-                        cell.dataset.track = row;
-                        cell.dataset.step = col;
-
-                        cell.addEventListener('click', () => {
-                            this.toggleStep(row, col);
-                        });
-
-                        grid.appendChild(cell);
-                    }
-                }
-            }
-
-            drawMap() {
-                if (!this.geoData || !this.gridBounds) return;
-
-                const { width, height } = this.canvas;
-                this.ctx.clearRect(0, 0, width, height);
-
-                // Draw background
-                this.ctx.fillStyle = 'rgba(26, 26, 46, 0.3)';
-                this.ctx.fillRect(0, 0, width, height);
-
-                // Draw points using the same coordinate system as the grid
-                this.geoData.features.forEach(feature => {
-                    const [lng, lat] = feature.geometry.coordinates;
-                    const { x, y } = this.coordsToPixel(lng, lat);
-
-                    this.ctx.beginPath();
-                    this.ctx.arc(x, y, 2, 0, 2 * Math.PI);
-                    this.ctx.fillStyle = '#ffffff';
-                    this.ctx.fill();
-                    this.ctx.strokeStyle = '#00ff88';
-                    this.ctx.lineWidth = 0.5;
-                    this.ctx.stroke();
-                });
-            }
-
-            coordsToPixel(lng, lat) {
-                if (!this.gridBounds) return { x: 0, y: 0 };
-
-                const { width, height } = this.canvas;
-                const { minLng, maxLng, minLat, maxLat } = this.gridBounds;
-
-                const x = ((lng - minLng) / (maxLng - minLng)) * width;
-                const y = height - ((lat - minLat) / (maxLat - minLat)) * height;
-
-                return { x, y };
-            }
-
-            updateSequencerDisplay() {
-                this.tracks.forEach((track, trackIndex) => {
-                    track.pattern.forEach((active, stepIndex) => {
-                        const cell = document.querySelector(`[data-track="${trackIndex}"][data-step="${stepIndex}"]`);
-                        if (cell) {
-                            cell.classList.toggle('active', active);
-                        }
-                    });
-                });
-            }
-
-            toggleStep(trackIndex, stepIndex) {
-                this.tracks[trackIndex].pattern[stepIndex] = !this.tracks[trackIndex].pattern[stepIndex];
-                this.updateSequencerDisplay();
-
-                // Play preview sound - this is a click action
-                if (this.isAudioInitialized && this.tracks[trackIndex].pattern[stepIndex]) {
-                    this.soundEngine.playTrackSound(trackIndex, this.tracks[trackIndex].sound, true);
-                }
-            }
-
-            togglePlayback() {
-                if (this.isPlaying) {
-                    this.pause();
-                } else {
-                    this.play();
-                }
-            }
-
-            play() {
-                if (!this.geoData) {
-                    return;
-                }
-
-                this.isPlaying = true;
-                const playButton = document.getElementById('playButton');
-                playButton.textContent = '⏸ Pause';
-                playButton.classList.add('active');
-
-                const interval = (60 / this.bpm / 4) * 1000; // 16th notes
-
-                this.playInterval = setInterval(() => {
-                    this.step();
-                }, interval);
-            }
-
-            pause() {
-                this.isPlaying = false;
-                const playButton = document.getElementById('playButton');
-                playButton.textContent = '▶ Play';
-                playButton.classList.remove('active');
-
-                if (this.playInterval) {
-                    clearInterval(this.playInterval);
-                    this.playInterval = null;
-                }
-
-                this.clearBeatHighlights();
-            }
-
-            stop() {
-                this.isPlaying = false;
-                const playButton = document.getElementById('playButton');
-                playButton.textContent = '▶ Play';
-                playButton.classList.remove('active');
-
-                if (this.playInterval) {
-                    clearInterval(this.playInterval);
-                    this.playInterval = null;
-                }
-
-                this.currentBeat = 0;
-                this.clearBeatHighlights();
-            }
-
-            step() {
-                // Clear previous highlights
-                this.clearBeatHighlights();
-
-                // Highlight current beat column and trigger sounds
-                this.tracks.forEach((track, trackIndex) => {
-                    const cell = document.querySelector(`[data-track="${trackIndex}"][data-step="${this.currentBeat}"]`);
-                    if (cell) {
-                        cell.classList.add('current-beat');
-
-                        if (track.pattern[this.currentBeat]) {
-                            cell.classList.add('playing');
-                            this.soundEngine.playTrackSound(trackIndex, track.sound, false);
-                            this.highlightRelevantPoints(trackIndex, this.currentBeat);
-
-                            setTimeout(() => {
-                                cell.classList.remove('playing');
-                            }, 100);
-                        }
-                    }
-                });
-
-                this.currentBeat = (this.currentBeat + 1) % this.gridCols;
-            }
-
-            highlightRelevantPoints(trackIndex, stepIndex) {
-                if (!this.geoData || !this.gridBounds) return;
-
-                // Reset all persistent markers to normal state
-                this.persistentPointMarkers.forEach(marker => {
-                    marker.classList.remove('highlighted');
-                });
-
-                const { width, height } = this.canvas;
-                const cellWidth = width / this.gridCols;
-                const cellHeight = height / this.gridRows;
-
-                // Calculate the bounds of the current sequencer cell
-                const cellMinX = stepIndex * cellWidth;
-                const cellMaxX = (stepIndex + 1) * cellWidth;
-                const cellMinY = trackIndex * cellHeight;
-                const cellMaxY = (trackIndex + 1) * cellHeight;
-
-                // Highlight points within the current cell
-                this.geoData.features.forEach((feature, index) => {
-                    const [lng, lat] = feature.geometry.coordinates;
-                    const { x, y } = this.coordsToPixel(lng, lat);
-
-                    // Check if point is within the current sequencer cell
-                    if (x >= cellMinX && x < cellMaxX && y >= cellMinY && y < cellMaxY) {
-                        if (this.persistentPointMarkers[index]) {
-                            this.persistentPointMarkers[index].classList.add('highlighted');
-
-                            // Remove highlight after animation
-                            setTimeout(() => {
-                                if (this.persistentPointMarkers[index]) {
-                                    this.persistentPointMarkers[index].classList.remove('highlighted');
-                                }
-                            }, 200);
-                        }
-                    }
-                });
-            }
-
-            clearBeatHighlights() {
-                document.querySelectorAll('.current-beat').forEach(el => {
-                    el.classList.remove('current-beat');
-                });
-            }
-
-            clearPattern() {
-                this.tracks.forEach(track => track.pattern.fill(false));
-                this.updateSequencerDisplay();
-            }
-
-            // Cleanup on component destruction
-            destroy() {
-                if (this.playInterval) {
-                    clearInterval(this.playInterval);
-                }
-                if (this.soundEngine) {
-                    this.soundEngine.destroy();
-                }
-
-                // Clean up persistent markers
-                this.persistentPointMarkers.forEach(marker => {
-                    if (marker.parentElement) {
-                        marker.parentElement.removeChild(marker);
-                    }
-                });
-                this.persistentPointMarkers = [];
-            }
-        }
-
-        // Initialize the interface
+        // Initialize the interface after DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
-            window.sequencer = new GeoJSONSequencer();
+            // Check if classes are available
+            if (typeof window.GeoS4SoundEngine === 'undefined') {
+                console.error('GeoS4SoundEngine class not found - external JS files may not be loaded');
+                return;
+            }
+
+            if (typeof window.GeoJSONSequencer === 'undefined') {
+                console.error('GeoJSONSequencer class not found - external JS files may not be loaded');
+                return;
+            }
+
+            // Initialize the sequencer
+            window.sequencer = new window.GeoJSONSequencer();
+            console.log('GeoS4 Sequencer initialized with external JS modules');
         });
 
         // Cleanup when the page unloads

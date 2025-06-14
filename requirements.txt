@@ -5,4 +5,5 @@ geopandas
 osmnx
 scikit-learn
 contextily
-streamlit-community-navigation-bar
+folium
+streamlit-folium
