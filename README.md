@@ -221,10 +221,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Contact
 
-- **Project Maintainer**: [Your Name]
-- **Email**: [your.email@example.com]
-- **GitHub**: [https://github.com/yourusername/geos4](https://github.com/yourusername/geos4)
-- **Issues**: [https://github.com/yourusername/geos4/issues](https://github.com/yourusername/geos4/issues)
+- **Project Maintainer**: [Alessandro Ciociola (Choxee)]
+- **Email**: [choxee.g@gmail.com]
+- **GitHub**: [https://github.com/AleCioc/geos4](https://github.com/AleCioc/geos4)
+- **Issues**: [https://github.com/AleCioc/geos4/issues](https://github.com/AleCioc/geos4/issues)
 
 ## 🔮 Future Roadmap
 
