@@ -66,7 +66,7 @@ GeoS4 stands for **Geographic Sequencer for Spatial Soundscapes**. It's a creati
 
 1. **Clone the repository:**
 ```bash
-git clone https://github.com/yourusername/geos4.git
+git clone https://github.com/alecioc/geos4.git
 cd geos4
 ```
 
@@ -208,7 +208,7 @@ We welcome contributions! Here's how you can help:
 
 ## 📜 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+TODO
 
 ## 🙏 Acknowledgments
 
