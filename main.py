@@ -252,7 +252,7 @@ def main():
         with col1:
             st.markdown("## Welcome to GeoS4!")
             st.markdown("""
-            **GeoS4** is an innovative tool that transforms real-world geographic data into musical patterns. 
+            **GeoS4** ( https://github.com/AleCioc/geos4 ) is an innovative tool that transforms real-world geographic data into musical patterns. 
             By mapping spatial information from cities onto a sequencer grid, you can create unique rhythmic 
             compositions inspired by urban landscapes.
 
