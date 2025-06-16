@@ -193,7 +193,10 @@ def create_webaudio_sequencer(version, active_cells_data, bpm, is_playing, times
     """Create sequencer HTML with enhanced controls organization"""
 
     # Updated path to sequencer module
-    sequencer_base_path = '../geos4_sequencers/horizontal_grid_sequencer_0'
+    sequencer_base_path = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)),
+        'geos4_sequencers/horizontal_grid_sequencer_0'
+    )
 
     st.write(sequencer_base_path)
 
