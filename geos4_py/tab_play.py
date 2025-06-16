@@ -199,7 +199,7 @@ def create_webaudio_sequencer(version, active_cells_data, bpm, is_playing, times
         'V0': 'horizontal_grid_sequencer_single_layer.html'
     }
 
-    filepath = os.path.join(sequencer_base_path, filename_map.get(version, 'horizontal_grid_sequencer_enhanced.html'))
+    filepath = os.path.join(sequencer_base_path, filename_map.get(version, 'horizontal_grid_sequencer_single_layer.html'))
 
     if not os.path.exists(filepath):
         return f"<div>Error: {filepath} not found. Please ensure the sequencer module is properly installed.</div>"

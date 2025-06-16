@@ -140,8 +140,6 @@ def main():
         "🎵 Play!"
     ])
 
-    col1, col2 = st.columns((3, 1))
-    # Render tabs using separate modules
     with tab1:
         render_get_started_tab()
 
