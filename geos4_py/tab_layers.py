@@ -19,19 +19,19 @@ def create_layer_union(layer_data):
     try:
         # Collect all points and city boundaries from patterns
         all_points = []
-        all_city_gdfs = []
+        all_location_gdfs = []
         all_locations = []
         all_data_info = []
 
         for pattern in patterns:
             points_gdf = pattern.get('points_gdf')
-            city_gdf = pattern.get('city_gdf')
+            location_gdf = pattern.get('city_gdf')
 
             if points_gdf is not None and not points_gdf.empty:
                 all_points.append(points_gdf)
 
-            if city_gdf is not None and not city_gdf.empty:
-                all_city_gdfs.append(city_gdf)
+            if location_gdf is not None and not location_gdf.empty:
+                all_location_gdfs.append(location_gdf)
 
             if pattern.get('location_name'):
                 all_locations.append(pattern['location_name'])
@@ -59,21 +59,21 @@ def create_layer_union(layer_data):
             )
 
         # PRESERVE all city boundaries - DO NOT dissolve them
-        if len(all_city_gdfs) == 1:
-            union_city_gdf = all_city_gdfs[0]
+        if len(all_location_gdfs) == 1:
+            union_city_gdf = all_location_gdfs[0]
         else:
             # Keep all original boundary shapes instead of creating a dissolved union
-            base_crs = all_city_gdfs[0].crs
-            aligned_cities = []
-            for city_gdf in all_city_gdfs:
-                if city_gdf.crs != base_crs:
-                    city_gdf = city_gdf.to_crs(base_crs)
-                aligned_cities.append(city_gdf)
+            base_crs = all_location_gdfs[0].crs
+            aligned_locations = []
+            for location_gdf in all_location_gdfs:
+                if location_gdf.crs != base_crs:
+                    location_gdf = location_gdf.to_crs(base_crs)
+                aligned_locations.append(location_gdf)
 
             # Concatenate all city boundaries preserving individual shapes
             # This keeps bordering boundaries as separate features
             union_city_gdf = gpd.GeoDataFrame(
-                pd.concat(aligned_cities, ignore_index=True),
+                pd.concat(aligned_locations, ignore_index=True),
                 crs=base_crs
             )
 

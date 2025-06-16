@@ -47,14 +47,14 @@ def render_get_started_tab():
         Visit our GitHub repository for the latest updates: **https://github.com/AleCioc/geos4**
         """)
 
-    with col2:
-        st.markdown("### 🎯 Quick Tips")
-        st.info("""
-        **Best Results:**
-        - Try cities with distinctive geographic features
-        - Dense urban areas create complex rhythms
-        - Coastal cities offer interesting patterns
-        """)
+    # with col2:
+    #     st.markdown("### 🎯 Quick Tips")
+    #     st.info("""
+    #     **Best Results:**
+    #     - Try cities with distinctive geographic features
+    #     - Dense urban areas create complex rhythms
+    #     - Coastal cities offer interesting patterns
+    #     """)
 
 # "        - Use immediate zoom for precise area selection"
 #         st.markdown("### 🌟 Examples to Try")

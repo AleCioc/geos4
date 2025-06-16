@@ -21,16 +21,16 @@ def auto_generate_pattern(location_query, data_source, amenity_type=None, max_am
         return None, None, None, None, None, None, None, None
 
     try:
-        # Step 1: Fetch city boundary
-        city_gdf, city_polygon = fetch_city_boundary(location_query)
+        # Step 1: Fetch boundary
+        location_boundaries_gdf, city_polygon = fetch_city_boundary(location_query)
 
-        if city_gdf is None:
+        if location_boundaries_gdf is None:
             return None, None, None, None, None, None, None, None
 
         # Step 2: Get points based on data source
         if data_source == "Random Points" and num_points:
             points = generate_random_points(city_polygon, num_points)
-            points_gdf = city_gdf.__class__(geometry=points, crs=city_gdf.crs)
+            points_gdf = location_boundaries_gdf.__class__(geometry=points, crs=location_boundaries_gdf.crs)
             data_info = f"{num_points} random points"
         elif data_source == "Amenities" and amenity_type and max_amenities:
             points_gdf = fetch_amenities(location_query, amenity_type, max_points=max_amenities)
@@ -65,13 +65,13 @@ def auto_generate_pattern(location_query, data_source, amenity_type=None, max_am
         }
 
         # Step 5: Calculate optimal grid and process to sequencer format
-        optimal_steps, optimal_tracks = calculate_optimal_grid_dimensions(points_gdf, city_gdf)
-        active_cells_data = process_points_to_sequencer(city_gdf, points_gdf, optimal_steps, optimal_tracks)
+        optimal_steps, optimal_tracks = calculate_optimal_grid_dimensions(points_gdf, location_boundaries_gdf)
+        active_cells_data = process_points_to_sequencer(location_boundaries_gdf, points_gdf, optimal_steps, optimal_tracks)
         geojson_data = convert_gdf_to_geojson(points_gdf)
-        city_bounds_data = convert_gdf_to_geojson(city_gdf)
+        city_bounds_data = convert_gdf_to_geojson(location_boundaries_gdf)
         grid_config = {'num_steps': optimal_steps, 'num_tracks': optimal_tracks}
 
-        return (city_gdf, points_gdf, data_info, max_bounds, active_cells_data,
+        return (location_boundaries_gdf, points_gdf, data_info, max_bounds, active_cells_data,
                 geojson_data, city_bounds_data, grid_config)
 
     except Exception as e:
@@ -140,16 +140,16 @@ def add_current_pattern_to_layer(selected_option, new_layer_name=None):
             st.session_state.stored_layers = {}
 
         # Get current pattern data
-        city_gdf = st.session_state.get('city_gdf')
+        location_gdf = st.session_state.get('city_gdf')
         points_gdf = st.session_state.get('points_gdf')
 
-        if city_gdf is None or points_gdf is None:
+        if location_gdf is None or points_gdf is None:
             st.error("No valid geographic data available to add.")
             return
 
         # Create pattern data
         pattern_data = {
-            'city_gdf': city_gdf,
+            'city_gdf': location_gdf,
             'points_gdf': points_gdf,
             'location_name': st.session_state.get('city_name', 'Unknown'),
             'data_info': st.session_state.get('data_info', 'No data'),
@@ -204,11 +204,11 @@ def render_location_and_data_section():
         col1, col2 = st.columns([3, 1])
 
         with col1:
-            st.markdown("**Discover cities from around the world!**")
-            st.markdown("Generate a random country and explore its urban patterns.")
+            st.markdown("**Discover countries from around the world!**")
+            st.markdown("Generate a random country and explore its patterns.")
 
         with col2:
-            if st.button("🎲 Random Country", help="Get a city from a random country",
+            if st.button("🎲 Random Country", help="Get a random country",
                          use_container_width=True, key="random_expander"):
                 random_location = generate_random_location()
                 if random_location:
@@ -256,7 +256,7 @@ def render_location_and_data_section():
             amenity_type = st.selectbox(
                 "Amenity Type",
                 ["restaurant", "cafe", "bar", "shop", "bank", "pharmacy", "school", "hospital", "fuel"],
-                help="Type of amenity to fetch from the city",
+                help="Type of amenity to fetch",
                 key="amenity_type_select"
             )
         with amenity_col2:
@@ -388,12 +388,12 @@ def render_create_pattern_tab():
                 num_points, transformation, transform_params
             )
 
-            (city_gdf, points_gdf, data_info, max_bounds, active_cells_data,
+            (location_gdf, points_gdf, data_info, max_bounds, active_cells_data,
              geojson_data, city_bounds_data, grid_config) = result
 
-            if city_gdf is not None and points_gdf is not None:
+            if location_gdf is not None and points_gdf is not None:
                 # Update session state
-                st.session_state.city_gdf = city_gdf
+                st.session_state.city_gdf = location_gdf
                 st.session_state.points_gdf = points_gdf
                 st.session_state.data_info = data_info
                 st.session_state.city_name = location_query
