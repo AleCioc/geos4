@@ -1,8 +1,8 @@
 # 🌍 GeoS4 - Geographic Sequencer
 
-**Transform city geography into musical patterns**
+**Transform city geography into musical patterns with advanced data layers and recording capabilities**
 
-GeoS4 is an innovative web application that bridges the gap between geography and music by converting real-world urban data into rhythmic compositions. By mapping spatial information from cities onto an interactive drum sequencer, users can explore the sonic landscape of any location on Earth.
+GeoS4 is an innovative web application that bridges the gap between geography and music by converting real-world urban data into rhythmic compositions. Users can organize multiple spatial patterns into data layers, upload custom sounds, and record their geographic musical creations.
 
 ![GeoS4 Demo](https://img.shields.io/badge/Status-Active-brightgreen) ![Python](https://img.shields.io/badge/Python-3.8+-blue) ![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-red) ![License](https://img.shields.io/badge/License-MIT-yellow)
 
@@ -11,49 +11,67 @@ GeoS4 is an innovative web application that bridges the gap between geography an
 GeoS4 stands for **Geographic Sequencer for Spatial Soundscapes**. It's a creative tool that:
 
 - **Fetches real geographic data** from OpenStreetMap (city boundaries, amenities, points of interest)
-- **Processes spatial information** through mathematical transformations
-- **Maps coordinates to a drum sequencer** where each geographic point becomes a potential sound trigger
-- **Creates adaptive grids** that automatically adjust to the shape and density of your data
-- **Generates unique rhythms** that reflect the actual urban landscape of any city
+- **Organizes spatial patterns** into manageable data layers for complex compositions
+- **Processes spatial information** through mathematical transformations (clustering, grid alignment, noise)
+- **Maps coordinates to an adaptive drum sequencer** where each geographic point becomes a potential sound trigger
+- **Supports custom audio uploads** for personalized soundscapes
+- **Records high-quality audio** of your geographic musical performances
+- **Creates complex multi-city compositions** by combining patterns from different locations
 
 ## ✨ Key Features
+
+### 📚 **Advanced Data Layer System**
+- **Layer Organization**: Group multiple spatial patterns from different cities into thematic collections
+- **Geographic Union Processing**: Combine patterns while preserving individual city boundary shapes
+- **Multi-City Compositions**: Create complex rhythms by merging patterns from multiple locations
+- **Workflow Management**: Organize related geographic explorations for systematic creative work
+
+**Example Layer Ideas:**
+- *"European Capitals"*: Rome + Paris + Berlin restaurant patterns
+- *"Coastal Mediterranean"*: Barcelona + Nice + Genoa cafe distributions  
+- *"University Towns"*: Cambridge + Oxford + Bologna academic amenities
+- *"Trading Routes"*: Venice + Amsterdam + Bruges historical commerce points
 
 ### 🗺️ **Real Geographic Data Integration**
 - Fetches actual city boundaries from OpenStreetMap
 - Supports various amenity types: restaurants, cafes, shops, banks, hospitals, and more
 - Random point generation within city boundaries
 - Works with any city worldwide
+- Random country discovery tool with 249+ countries
 
 ### 🎛️ **Adaptive Sequencer Grid**
-- Automatically calculates optimal grid dimensions based on city shape and point density
-- Real-time grid resizing (8-32 steps × 2-8 tracks)
+- Automatically calculates optimal grid dimensions (8-32 steps × 2-8 tracks) based on city shape and point density
+- Real-time grid resizing maintains geographic coherence
 - Geographic points map directly to sequencer cells
 - Visual feedback showing which points trigger sounds during playback
+- Dynamic adaptation when combining multiple city patterns
 
-### 🎵 **Advanced Audio Engine**
-- 12+ built-in synthesized drum sounds (kick, snare, hi-hat, percussion, etc.)
-- Custom audio file upload support (MP3, WAV, OGG, M4A, AAC)
-- Web Audio API-based synthesis with randomization options
-- Individual track muting and sound assignment
-- BPM control (1-180 BPM)
+### 🎵 **Professional Audio System**
+- **Built-in Synthesized Drums**: 12+ high-quality drum sounds (kick, snare, hi-hat, percussion, etc.)
+- **Custom Audio Upload**: Add your own sound files (MP3, WAV, OGG, M4A, AAC) to any track
+- **Web Audio API Synthesis**: Low-latency, professional-quality audio generation
+- **Randomization Tools**: Instantly generate new sound combinations
+- **Individual Track Controls**: Mute, solo, and customize each track independently
+
+### 📼 **Built-in Recording System**
+- **High-Quality Recording**: Professional audio capture using Web Audio API
+- **Real-time Performance Capture**: Record your live geographic musical performances
+- **Instant Download**: Save compositions as audio files for sharing and archiving
+- **Session Integration**: Recordings preserve exact spatial-musical relationships
+- **Multiple Format Support**: Export in various audio formats
 
 ### 🔧 **Spatial Transformations**
-- **Clustering**: Groups points and adds cluster centers for rhythmic emphasis
-- **Grid Alignment**: Snaps points to regular grids for structured patterns
-- **Noise Addition**: Adds controlled randomness to point positions
-- **None**: Uses raw geographic data unchanged
+- **Clustering**: Groups points and adds cluster centers for rhythmic emphasis (K-means algorithm)
+- **Grid Alignment**: Snaps points to regular grids for structured patterns (up to 5km grid sizes)
+- **Noise Addition**: Adds controlled randomness to point positions (up to 1km variation)
+- **Geographic Filtering**: Focus on specific spatial regions within larger datasets
 
 ### 🗺️ **Interactive Visualization**
 - **Static Background Maps**: Matplotlib-based visualizations with contextily basemaps
 - **Interactive Maps**: Folium-powered maps with zoom, pan, and point exploration
-- **Real-time Point Highlighting**: Visual feedback during sequencer playback
-- **Map Integration**: Background city imagery in the sequencer interface
-
-### 🎲 **Discovery Features**
-- Random country generator with 249+ countries
-- Quick pattern generation for instant experimentation
-- Non-disruptive pattern updates that preserve playback state
-- Exploration tools for finding interesting geographic patterns
+- **Real-time Point Highlighting**: Visual feedback during sequencer playback with column-wide blinking
+- **Map Integration**: Background city imagery appears behind the sequencer interface
+- **Multi-layer Visualization**: Clear display of combined geographic datasets
 
 ## 🚀 Getting Started
 
@@ -82,144 +100,191 @@ streamlit run main.py
 
 4. **Open your browser** and navigate to `http://localhost:8501`
 
-## 🎮 How to Use
+## 🎮 Complete User Guide
 
-### **Step 1: Get Started**
-- Launch the app and read the introduction in the "Get Started" tab
-- Learn about the features and see example cities to try
+### **Step 1: Understanding Data Layers**
 
-### **Step 2: Create Your Spatial Pattern**
-1. **Choose a Location**: Enter any city name (e.g., "Barcelona, Spain") or use the random country generator
-2. **Select Data Source**: 
-   - **Amenities**: Real points of interest from OpenStreetMap
+**Data Layers** are the organizational foundation of GeoS4. They allow you to:
+- Group multiple spatial patterns from different cities
+- Create thematic collections of geographic data
+- Build complex, multi-city musical compositions
+- Organize your creative geographic explorations
+
+### **Step 2: Create Your First Spatial Pattern**
+1. **Navigate** to the "Create Spatial Pattern" tab
+2. **Choose a Location**: Enter any city name (e.g., "Barcelona, Spain") or use the random country generator
+3. **Select Data Source**: 
+   - **Amenities**: Real points of interest from OpenStreetMap (restaurants, cafes, shops, etc.)
    - **Random Points**: Algorithmically generated points within city boundaries
-3. **Apply Transformations**: Optionally modify your data with clustering, grid alignment, or noise
-4. **Generate Pattern**: Click "Generate Spatial Pattern" to process your data
-5. **Explore**: View your pattern on an interactive map
+4. **Apply Transformations** (optional): Modify your data with clustering, grid alignment, or noise
+5. **Create Layer**: Add your pattern to a new or existing data layer
 
-### **Step 3: Play Your Creation**
-1. **Switch to Play Tab**: Navigate to the "Play!" tab
-2. **Control Playback**: Use transport controls (Play/Pause/Stop)
-3. **Customize Sounds**: 
+### **Step 3: Build Data Layer Collections**
+1. **Single-City Layers**: Focus on one location for detailed exploration
+   - Example: "Manhattan Restaurants" - Deep dive into NYC dining patterns
+2. **Multi-City Layers**: Combine patterns from multiple locations
+   - Example: "Mediterranean Coastal Cities" - Barcelona + Nice + Naples cafe patterns
+3. **Themed Layers**: Organize by geographic or cultural themes
+   - Example: "European University Towns" - Cambridge + Bologna + Heidelberg academic facilities
+
+### **Step 4: Manage Your Layers**
+1. **Switch** to the "Data Layers" tab
+2. **View** all your created layers with interactive maps
+3. **Select** layers for sequencer use
+4. **Delete** layers you no longer need
+5. **Navigate** quickly between layer exploration and musical playback
+
+### **Step 5: Create Music with the Sequencer**
+1. **Navigate** to the "Play!" tab (your selected layer should auto-load)
+2. **Control Playback**: Use transport controls (Play/Pause/Stop/Record)
+3. **Customize Grid**: Modify steps (8-32) and tracks (2-8) in real-time
+4. **Upload Custom Sounds**: 
+   - Click the upload button on any track
+   - Support for MP3, WAV, OGG, M4A, AAC formats
+   - Replace default drums with your own audio samples
+5. **Adjust Audio Settings**: 
    - Select different drum sounds for each track
-   - Upload custom audio files
-   - Use randomization features
-4. **Adjust Grid**: Modify steps and tracks in real-time
-5. **Visual Feedback**: Watch geographic points highlight as they trigger sounds
+   - Use randomization features for instant variety
+   - Control individual track volumes and effects
 
-## 🏗️ Architecture
+### **Step 6: Record Your Creations**
+1. **Start Recording**: Click the record button in the sequencer controls
+2. **Perform Live**: Play, stop, modify settings while recording
+3. **Stop Recording**: Click record again to finish
+4. **Download Audio**: Automatically save your geographic composition
+5. **Share Your Work**: Use recorded files for sharing or further production
+
+## 🏗️ Technical Architecture
 
 ### **Frontend Components**
-- **Streamlit Interface**: Main application framework with tab-based navigation
-- **HTML5 Sequencer**: Custom web component with canvas-based visualization
-- **JavaScript Sound Engine**: Web Audio API-based synthesis and playback
-- **Interactive Maps**: Folium integration for geographic exploration
+- **Streamlit Interface**: Main application framework with enhanced tab-based navigation
+- **HTML5 Sequencer**: Custom web component with canvas-based visualization and recording
+- **JavaScript Audio Engine**: Web Audio API-based synthesis, custom audio support, and recording
+- **Interactive Maps**: Folium integration with multi-layer support
 
 ### **Backend Processing**
-- **Geospatial Module** (`geospatial_utils.py`): All geographic data processing
-- **OSMnx Integration**: Fetching city boundaries and amenities
-- **GeoPandas**: Spatial data manipulation and coordinate transformations
-- **Mathematical Transformations**: Clustering, noise, and grid alignment algorithms
+- **Geospatial Module** (`geospatial_utils.py`): All geographic data processing and layer management
+- **Layer Union System**: Advanced geographic data merging with boundary preservation
+- **OSMnx Integration**: Real-time fetching of city boundaries and amenities
+- **Mathematical Transformations**: Sophisticated clustering, noise, and grid alignment algorithms
 
 ### **Data Flow**
 1. **Geographic Query** → OSMnx API → City boundaries and points
-2. **Spatial Processing** → Coordinate transformations and optimizations
-3. **Grid Mapping** → Geographic coordinates to sequencer grid positions
-4. **Audio Synthesis** → Web Audio API sound generation
-5. **Visual Feedback** → Real-time highlighting and user interface updates
+2. **Layer Organization** → Multiple pattern storage and management
+3. **Spatial Processing** → Union creation with boundary preservation
+4. **Grid Mapping** → Geographic coordinates to adaptive sequencer grid positions
+5. **Audio Synthesis** → Web Audio API with custom sample support
+6. **Recording System** → Real-time audio capture and export
+7. **Visual Feedback** → Multi-layer highlighting and user interface updates
 
-## 🎨 Use Cases
+## 🎨 Advanced Use Cases
 
 ### **Music Production**
-- Generate unique rhythmic patterns inspired by cities
-- Create location-based compositions
-- Explore unconventional rhythm structures
+- Generate unique rhythmic patterns inspired by urban geography
+- Create location-based concept albums using data layers
+- Develop signature sounds by uploading custom audio samples
+- Record geographic compositions for professional music production
 
-### **Education**
-- Visualize urban geography through sound
-- Understand spatial data concepts
-- Explore the relationship between geography and music
+### **Educational Applications**
+- **Geography Classes**: Explore urban planning differences through sound
+- **Music Technology**: Understand spatial data sonification principles
+- **Cultural Studies**: Compare rhythmic patterns across different cities and regions
+- **Data Science**: Learn about geographic data processing and visualization
 
 ### **Art Installations**
-- Interactive exhibits exploring urban soundscapes
-- Location-aware musical experiences
-- Data sonification projects
+- **Interactive Exhibits**: Create location-aware musical experiences
+- **Urban Soundscapes**: Generate city-specific audio environments
+- **Cultural Documentation**: Preserve geographic patterns as audio archives
+- **Collaborative Art**: Build community geographic music collections
 
-### **Research**
-- Urban density analysis through audio representation
-- Spatial pattern recognition experiments
-- Human-computer interaction studies
-
-### **Entertainment**
-- Discover how different cities "sound"
-- Create collaborative musical maps
-- Gamify geographic exploration
+### **Research Applications**
+- **Urban Density Analysis**: Analyze spatial distribution patterns through audio
+- **Cross-Cultural Studies**: Compare urban development patterns across regions
+- **Human-Computer Interaction**: Study spatial data interaction methods
+- **Musicology**: Explore algorithmic composition techniques
 
 ## 🛠️ Technical Details
 
-### **Geographic Data Processing**
-- **OpenStreetMap Integration**: Real-time data fetching via OSMnx
-- **Coordinate Systems**: Automatic CRS handling and transformations
-- **Spatial Algorithms**: K-means clustering, grid snapping, noise injection
-- **Boundary Calculation**: Optimal grid sizing based on city aspect ratios
+### **Data Layer Processing**
+- **Geographic Union Algorithm**: Combines multiple city datasets while preserving boundary shapes
+- **Adaptive Grid Calculation**: Dynamic sizing based on combined spatial extents and point density
+- **Memory Management**: Efficient storage and retrieval of large geographic datasets
+- **Real-time Updates**: Live layer switching and modification capabilities
 
 ### **Audio Technology**
-- **Web Audio API**: Low-latency sound synthesis
-- **Custom Buffer Management**: Efficient audio file loading and playback
-- **Real-time Parameter Control**: Dynamic BPM, volume, and effect adjustments
-- **Cross-browser Compatibility**: Support for modern web browsers
+- **Web Audio API**: Professional-grade low-latency synthesis and recording
+- **Custom Sample Management**: Efficient loading and playback of user-uploaded audio
+- **Recording Engine**: High-quality real-time audio capture with Web Audio API
+- **Cross-browser Compatibility**: Comprehensive support for modern web browsers
+- **Format Support**: Multiple audio file formats for maximum compatibility
 
 ### **Performance Optimizations**
-- **Caching**: Streamlit cache for expensive geographic operations
-- **Lazy Loading**: On-demand audio file processing
+- **Streamlit Caching**: Intelligent caching for expensive geographic operations
+- **Lazy Loading**: On-demand audio file processing and layer loading
 - **Efficient Rendering**: Canvas-based visualization with minimal redraws
-- **Memory Management**: Proper cleanup of audio resources
+- **Memory Management**: Proper cleanup of audio resources and layer data
 
-## 🔧 Configuration
+## 📂 Project Structure
 
-### **Customization Options**
-- **Grid Limits**: Modify maximum steps (32) and tracks (8) in `geospatial_utils.py`
-- **Audio Settings**: Adjust synthesis parameters in `sound_engine.js`
-- **Visual Styling**: Customize appearance in `styles.css`
-- **Map Providers**: Change basemap sources in map creation functions
+```
+geos4/
+├── main.py                          # Main Streamlit application
+├── geos4_py/
+│   ├── tab_get_started.py          # Enhanced intro with layers explanation
+│   ├── tab_create_pattern.py       # Pattern creation and layer management
+│   ├── tab_layers.py               # Data layer organization and selection
+│   ├── tab_play.py                 # Sequencer with recording capabilities
+│   └── geospatial_utils.py         # Core geographic processing and layer union
+├── geos4_sequencers/
+│   └── horizontal_grid_sequencer_0/
+│       ├── horizontal_grid_sequencer_single_layer.html  # Enhanced sequencer UI
+│       ├── sequencer.js            # Main sequencer coordinator
+│       ├── horizontal_grid_sequencer.js  # Grid implementation with recording
+│       ├── sound_engine.js         # Audio synthesis with custom upload support
+│       ├── sequencer_layer.js      # Layer management system
+│       ├── track.js               # Enhanced track controls with upload
+│       ├── sequencer_cell.js      # Cell behavior and properties
+│       └── geographic_visualizer.js # Multi-layer visualization
+├── requirements.txt               # Python dependencies
+└── README.md                     # This documentation
+```
 
-### **Environment Variables**
-No environment variables required for basic functionality.
+## 🔧 Configuration Options
+
+### **Audio Settings**
+- **Recording Quality**: Adjust sample rate and bit depth in sound_engine.js
+- **Synthesis Parameters**: Customize drum sound generation algorithms
+- **Upload Limits**: Configure maximum file size for custom audio samples
+- **Export Formats**: Modify available recording export formats
+
+### **Layer Management**
+- **Maximum Patterns**: Set limits on patterns per layer
+- **Geographic Bounds**: Configure spatial extent calculations
+- **Grid Adaptation**: Adjust automatic grid sizing algorithms
+- **Memory Limits**: Set constraints on layer data storage
 
 ## 🤝 Contributing
 
-We welcome contributions! Here's how you can help:
+We welcome contributions! Here's how you can help improve GeoS4:
 
+### **Priority Areas**
+1. **Advanced Recording Features**: Multi-track recording, loop capabilities, real-time effects
+2. **Layer Enhancement**: Layer-specific audio effects, advanced merging algorithms
+3. **Audio Improvements**: More synthesis options, professional audio export formats
+4. **User Interface**: Enhanced track controls, better file management, visual improvements
+5. **Performance**: Optimization for large datasets, faster layer switching
+6. **Documentation**: User tutorials, video guides, example projects
+
+### **Development Workflow**
 1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
-3. **Make your changes**: Implement new features or fix bugs
-4. **Test thoroughly**: Ensure all functionality works as expected
-5. **Commit your changes**: `git commit -m 'Add amazing feature'`
-6. **Push to branch**: `git push origin feature/amazing-feature`
+2. **Create a feature branch**: `git checkout -b feature/amazing-improvement`
+3. **Implement changes**: Add features, fix bugs, improve documentation
+4. **Test thoroughly**: Ensure all functionality works with various datasets
+5. **Commit changes**: `git commit -m 'Add amazing improvement'`
+6. **Push to branch**: `git push origin feature/amazing-improvement`
 7. **Open a Pull Request**: Describe your changes and their impact
 
-### **Areas for Contribution**
-- Additional spatial transformation algorithms
-- New audio synthesis methods
-- Enhanced visualization options
-- Performance optimizations
-- Documentation improvements
-- Bug fixes and testing
-
-## 📜 License
-
-TODO
-
-## 🙏 Acknowledgments
-
-- **OpenStreetMap**: For providing free, open geographic data
-- **OSMnx**: For simplifying OpenStreetMap data access
-- **Streamlit**: For enabling rapid web app development
-- **Web Audio API**: For powerful browser-based audio synthesis
-- **Folium**: For interactive map capabilities
-- **The Open Source Community**: For countless libraries and tools that make this project possible
-
-## 📞 Contact
+## 📞 Contact & Community
 
 - **Project Maintainer**: [Alessandro Ciociola (Choxee)]
 - **Email**: [choxee.g@gmail.com]
@@ -228,15 +293,24 @@ TODO
 
 ## 🔮 Future Roadmap
 
-- **Open Sound Control (OSC) Integration**: Real-time parameter control from external devices
-- **MIDI Export**: Save generated patterns as MIDI files
-- **Collaborative Features**: Share and remix patterns with other users
-- **Mobile Optimization**: Enhanced mobile device support
-- **Advanced Synthesis**: More sophisticated audio generation algorithms
-- **Machine Learning**: AI-powered pattern generation and optimization
+### **Immediate Priorities**
+- **Advanced Recording**: Multi-track recording, loop stations, real-time effects
+- **Enhanced Audio**: Professional plugin support, advanced synthesis options
+- **Layer Evolution**: Layer-specific transformations, advanced merging modes
+- **UI/UX Improvements**: Better file management, enhanced visualization options
+
+### **Medium-term Goals**
+- **Collaboration Features**: Share and remix data layers with other users
+- **Cloud Integration**: Online layer storage and sharing platform
 - **API Development**: Programmatic access to GeoS4 functionality
-- **Cloud Deployment**: Hosted service for easier access
+- **Mobile Optimization**: Enhanced mobile device support and touch interfaces
+
+### **Long-term Vision**
+- **AI Integration**: Machine learning-powered pattern generation and optimization
+- **Real-world Integration**: IoT sensors, GPS integration, live geographic data
+- **Professional Tools**: DAW integration, MIDI export, advanced audio processing
+- **Community Platform**: User-generated content, collaborative geographic music projects
 
 ---
 
-**Transform your world into music with GeoS4! 🌍🎵**
+**Transform your world into music with GeoS4's advanced data layers and recording capabilities! 🌍🎵📼**

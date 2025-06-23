@@ -1,7 +1,6 @@
 /**
- * GeoS4 Sound Engine - Modular Audio System
- * Handles all audio generation, custom audio loading, and sound synthesis
- * Note: Renamed oscillators from 'osc' to 'oscillator' to avoid conflict with Open Sound Control (OSC) protocol
+ * Enhanced GeoS4 Sound Engine with Recording and Custom Audio Upload
+ * Professional audio system with recording capabilities and file upload support
  */
 class GeoS4SoundEngine {
     constructor() {
@@ -9,19 +8,39 @@ class GeoS4SoundEngine {
         this.masterGain = null;
         this.isAudioInitialized = false;
         this.clickMuted = false;
-        this.customAudioBuffers = {}; // Store loaded custom audio buffers
+        this.customAudioBuffers = new Map(); // Track-specific custom audio buffers
         this.loadingAudio = new Set(); // Track which audio files are loading
+
+        // Recording system
+        this.mediaRecorder = null;
+        this.recordedChunks = [];
+        this.isRecording = false;
+        this.recordingStartTime = null;
+        this.recordingDuration = 0;
+        this.destinationNode = null;
+
+        // Recording settings
+        this.recordingSettings = {
+            mimeType: 'audio/webm;codecs=opus',
+            audioBitsPerSecond: 128000
+        };
     }
 
     async initializeAudio() {
-        if (this.isAudioInitialized) return;
+        if (this.isAudioInitialized) return true;
 
         try {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
             this.masterGain = this.audioContext.createGain();
             this.masterGain.connect(this.audioContext.destination);
             this.masterGain.gain.value = 0.7;
+
+            // Initialize recording destination
+            this.destinationNode = this.audioContext.createMediaStreamDestination();
+            this.masterGain.connect(this.destinationNode);
+
             this.isAudioInitialized = true;
+            console.log('Audio system initialized with recording support');
             return true;
         } catch (error) {
             console.error('Failed to initialize audio:', error);
@@ -29,83 +48,324 @@ class GeoS4SoundEngine {
         }
     }
 
-    async loadCustomAudio(trackKey, audioData) {
+    // === RECORDING SYSTEM ===
+
+    async startRecording() {
+        if (!this.isAudioInitialized) {
+            await this.initializeAudio();
+        }
+
+        if (this.isRecording) {
+            console.warn('Recording already in progress');
+            return false;
+        }
+
+        try {
+            // Check for supported MIME types
+            const mimeType = this.getSupportedMimeType();
+            if (!mimeType) {
+                throw new Error('No supported recording format found');
+            }
+
+            this.recordingSettings.mimeType = mimeType;
+
+            // Create MediaRecorder
+            this.mediaRecorder = new MediaRecorder(
+                this.destinationNode.stream,
+                this.recordingSettings
+            );
+
+            this.recordedChunks = [];
+            this.recordingStartTime = Date.now();
+
+            // Set up event handlers
+            this.mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    this.recordedChunks.push(event.data);
+                }
+            };
+
+            this.mediaRecorder.onstop = () => {
+                this.handleRecordingStop();
+            };
+
+            this.mediaRecorder.onerror = (event) => {
+                console.error('Recording error:', event.error);
+                this.isRecording = false;
+            };
+
+            // Start recording
+            this.mediaRecorder.start(100); // Collect data every 100ms
+            this.isRecording = true;
+
+            console.log('Recording started');
+            this.updateRecordingUI(true);
+
+            return true;
+
+        } catch (error) {
+            console.error('Failed to start recording:', error);
+            this.isRecording = false;
+            return false;
+        }
+    }
+
+    stopRecording() {
+        if (!this.isRecording || !this.mediaRecorder) {
+            console.warn('No recording in progress');
+            return false;
+        }
+
+        try {
+            this.mediaRecorder.stop();
+            this.isRecording = false;
+            this.recordingDuration = Date.now() - this.recordingStartTime;
+
+            console.log(`Recording stopped. Duration: ${this.recordingDuration}ms`);
+            this.updateRecordingUI(false);
+
+            return true;
+
+        } catch (error) {
+            console.error('Failed to stop recording:', error);
+            return false;
+        }
+    }
+
+    handleRecordingStop() {
+        if (this.recordedChunks.length === 0) {
+            console.warn('No recorded data available');
+            return;
+        }
+
+        // Create blob from recorded chunks
+        const blob = new Blob(this.recordedChunks, {
+            type: this.recordingSettings.mimeType
+        });
+
+        // Generate filename with timestamp
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const extension = this.getFileExtension(this.recordingSettings.mimeType);
+        const filename = `geos4-recording-${timestamp}.${extension}`;
+
+        // Automatically download the recording
+        this.downloadRecording(blob, filename);
+
+        // Reset recording state
+        this.recordedChunks = [];
+        this.recordingStartTime = null;
+        this.recordingDuration = 0;
+    }
+
+    getSupportedMimeType() {
+        const types = [
+            'audio/webm;codecs=opus',
+            'audio/webm',
+            'audio/mp4',
+            'audio/ogg;codecs=opus',
+            'audio/wav'
+        ];
+
+        for (const type of types) {
+            if (MediaRecorder.isTypeSupported(type)) {
+                return type;
+            }
+        }
+
+        return null;
+    }
+
+    getFileExtension(mimeType) {
+        const extensionMap = {
+            'audio/webm': 'webm',
+            'audio/mp4': 'm4a',
+            'audio/ogg': 'ogg',
+            'audio/wav': 'wav'
+        };
+
+        for (const [type, ext] of Object.entries(extensionMap)) {
+            if (mimeType.includes(type)) {
+                return ext;
+            }
+        }
+
+        return 'webm'; // Default fallback
+    }
+
+    downloadRecording(blob, filename) {
+        try {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.style.display = 'none';
+
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            // Clean up URL object
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+            console.log(`Recording downloaded: ${filename}`);
+
+            // Show user notification
+            this.showRecordingNotification(filename, blob.size);
+
+        } catch (error) {
+            console.error('Failed to download recording:', error);
+        }
+    }
+
+    updateRecordingUI(isRecording) {
+        const recordButton = document.getElementById('recordButton');
+        if (recordButton) {
+            if (isRecording) {
+                recordButton.textContent = '⏹ Stop Recording';
+                recordButton.classList.add('recording');
+                recordButton.style.background = 'linear-gradient(45deg, #ff4444, #cc0000)';
+                recordButton.style.animation = 'pulse 1s infinite';
+            } else {
+                recordButton.textContent = '📼 Record';
+                recordButton.classList.remove('recording');
+                recordButton.style.background = '';
+                recordButton.style.animation = '';
+            }
+        }
+    }
+
+    showRecordingNotification(filename, fileSize) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = 'recording-notification';
+        notification.innerHTML = `
+            <div style="
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #4caf50, #388e3c);
+                color: white;
+                padding: 15px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                z-index: 10000;
+                font-family: 'Courier New', monospace;
+                font-size: 0.9em;
+                max-width: 300px;
+            ">
+                <div style="font-weight: bold; margin-bottom: 5px;">
+                    ✅ Recording Saved!
+                </div>
+                <div style="font-size: 0.8em; opacity: 0.9;">
+                    ${filename}<br>
+                    Size: ${(fileSize / 1024 / 1024).toFixed(2)} MB
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(notification);
+
+        // Auto-remove notification after 5 seconds
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 5000);
+    }
+
+    // === CUSTOM AUDIO UPLOAD SYSTEM ===
+
+    async loadCustomAudioFile(file) {
         if (!this.audioContext) {
             await this.initializeAudio();
         }
 
-        if (!audioData || this.loadingAudio.has(trackKey)) {
-            return false;
-        }
-
-        this.loadingAudio.add(trackKey);
-
         try {
-            // Convert base64 to ArrayBuffer
-            const binaryString = atob(audioData.data);
-            const bytes = new Uint8Array(binaryString.length);
-            for (let i = 0; i < binaryString.length; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
-            }
+            // Convert file to ArrayBuffer
+            const arrayBuffer = await file.arrayBuffer();
 
             // Decode audio data
-            const audioBuffer = await this.audioContext.decodeAudioData(bytes.buffer);
-            this.customAudioBuffers[trackKey] = audioBuffer;
+            const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
 
-            console.log(`Custom audio loaded for ${trackKey}:`, audioData.filename);
-            this.loadingAudio.delete(trackKey);
-            return true;
+            console.log(`Custom audio loaded: ${file.name}, Duration: ${audioBuffer.duration.toFixed(2)}s`);
+            return audioBuffer;
 
         } catch (error) {
-            console.error(`Failed to load custom audio for ${trackKey}:`, error);
-            this.loadingAudio.delete(trackKey);
-            return false;
+            console.error('Failed to load custom audio file:', error);
+            throw error;
         }
     }
+
+    setTrackCustomAudio(trackIndex, audioBuffer) {
+        if (!audioBuffer) {
+            console.warn(`Cannot set custom audio for track ${trackIndex}: invalid audio buffer`);
+            return;
+        }
+
+        this.customAudioBuffers.set(trackIndex, audioBuffer);
+        console.log(`Custom audio buffer set for track ${trackIndex}, duration: ${audioBuffer.duration}s, channels: ${audioBuffer.numberOfChannels}`);
+    }
+
+    clearTrackCustomAudio(trackIndex) {
+        const wasCleared = this.customAudioBuffers.delete(trackIndex);
+        console.log(`Custom audio ${wasCleared ? 'cleared' : 'was not present'} for track ${trackIndex}`);
+    }
+
+    hasTrackCustomAudio(trackIndex) {
+        const hasAudio = this.customAudioBuffers.has(trackIndex);
+        console.log(`Track ${trackIndex} has custom audio: ${hasAudio}`);
+        return hasAudio;
+    }
+
+    // === AUDIO PLAYBACK SYSTEM ===
 
     setClickMuted(muted) {
         this.clickMuted = muted;
     }
 
-    async playTrackSound(trackIndex, soundType = null, isClick = false) {
+    async playTrackSound(trackIndex, soundType = null, isClick = false, volume = 1.0) {
         // Only apply mute to click sounds
         if (isClick && this.clickMuted) return;
 
-        const trackKey = `track_${trackIndex}`;
+        console.log(`Playing track ${trackIndex}, sound: ${soundType}, isClick: ${isClick}, hasCustom: ${this.customAudioBuffers.has(trackIndex)}`);
 
         // Try to play custom audio first
-        if (this.customAudioBuffers[trackKey]) {
-            this.playCustomAudio(trackKey);
+        if (this.customAudioBuffers.has(trackIndex)) {
+            console.log(`Playing custom audio for track ${trackIndex}`);
+            this.playCustomAudio(trackIndex, volume);
             return;
         }
 
         // Fallback to default sounds
         const defaultSounds = ['kick', 'snare', 'hihat', 'perc'];
         const sound = soundType || defaultSounds[trackIndex % defaultSounds.length];
-        this.playSound(sound);
+        console.log(`Playing default sound: ${sound} for track ${trackIndex}`);
+        this.playSound(sound, volume);
     }
 
-    playCustomAudio(trackKey) {
-        if (!this.audioContext || !this.customAudioBuffers[trackKey]) return;
+    playCustomAudio(trackIndex, volume = 1.0) {
+        if (!this.audioContext || !this.customAudioBuffers.has(trackIndex)) return;
 
         try {
+            const audioBuffer = this.customAudioBuffers.get(trackIndex);
             const source = this.audioContext.createBufferSource();
             const gainNode = this.audioContext.createGain();
 
-            source.buffer = this.customAudioBuffers[trackKey];
+            source.buffer = audioBuffer;
             source.connect(gainNode);
             gainNode.connect(this.masterGain);
 
-            // Set volume for custom audio
-            gainNode.gain.value = 0.8;
+            // Set volume
+            gainNode.gain.value = Math.max(0, Math.min(1, volume)) * 0.8;
 
             source.start(0);
+
         } catch (error) {
-            console.error(`Error playing custom audio for ${trackKey}:`, error);
+            console.error(`Error playing custom audio for track ${trackIndex}:`, error);
         }
     }
 
-    // Generate random sound parameters for more variety
+    // Generate random sound parameters for variety
     getRandomSoundParams() {
         return {
             frequency: Math.random() * 200 + 50, // 50-250 Hz
@@ -115,170 +375,80 @@ class GeoS4SoundEngine {
         };
     }
 
-    playSound(soundType) {
+    playSound(soundType, volume = 1.0) {
         if (!this.audioContext) return;
 
+        const adjustedVolume = Math.max(0, Math.min(1, volume));
+
         switch(soundType) {
             case 'kick':
-                this.playKick();
+                this.playKick(adjustedVolume);
                 break;
             case 'snare':
-                this.playSnare();
+                this.playSnare(adjustedVolume);
                 break;
             case 'hihat':
-                this.playHiHat();
+                this.playHiHat(adjustedVolume);
                 break;
             case 'perc':
-                this.playPerc();
+                this.playPerc(adjustedVolume);
                 break;
             case 'clap':
-                this.playClap();
+                this.playClap(adjustedVolume);
                 break;
             case 'cymbal':
-                this.playCymbal();
+                this.playCymbal(adjustedVolume);
                 break;
             case 'tom':
-                this.playTom();
+                this.playTom(adjustedVolume);
                 break;
             case 'rim':
-                this.playRim();
+                this.playRim(adjustedVolume);
                 break;
             case 'cowbell':
-                this.playCowbell();
+                this.playCowbell(adjustedVolume);
                 break;
             case 'shaker':
-                this.playShaker();
+                this.playShaker(adjustedVolume);
                 break;
             case 'bass':
-                this.playBass();
+                this.playBass(adjustedVolume);
                 break;
             case 'random':
-                this.playRandomSound();
+                this.playRandomSound(adjustedVolume);
                 break;
             default:
-                this.playPerc();
+                this.playPerc(adjustedVolume);
                 break;
         }
     }
 
-    // New random sound generator
-    playRandomSound() {
+    playRandomSound(volume = 1.0) {
         const randomTypes = ['kick', 'snare', 'hihat', 'perc', 'clap', 'cymbal', 'tom', 'rim', 'cowbell', 'shaker', 'bass'];
         const randomType = randomTypes[Math.floor(Math.random() * randomTypes.length)];
-
-        // Add some variation to the chosen sound
         const params = this.getRandomSoundParams();
-        this.playVariedSound(randomType, params);
+        this.playVariedSound(randomType, params, volume);
     }
 
-    playVariedSound(soundType, params) {
+    playVariedSound(soundType, params, volume = 1.0) {
         switch(soundType) {
             case 'kick':
-                this.playVariedKick(params);
+                this.playVariedKick(params, volume);
                 break;
             case 'snare':
-                this.playVariedSnare(params);
+                this.playVariedSnare(params, volume);
                 break;
             case 'hihat':
-                this.playVariedHiHat(params);
+                this.playVariedHiHat(params, volume);
                 break;
             default:
-                this.playVariedPerc(params);
+                this.playVariedPerc(params, volume);
                 break;
         }
     }
 
-    playVariedKick(params) {
-        const now = this.audioContext.currentTime;
-        const oscillator = this.audioContext.createOscillator();
-        const oscillatorGain = this.audioContext.createGain();
-
-        oscillator.connect(oscillatorGain);
-        oscillatorGain.connect(this.masterGain);
-
-        // Use random parameters
-        oscillator.frequency.setValueAtTime(params.frequency, now);
-        oscillator.frequency.exponentialRampToValueAtTime(0.1, now + params.decay);
-
-        oscillatorGain.gain.setValueAtTime(params.volume, now);
-        oscillatorGain.gain.exponentialRampToValueAtTime(0.01, now + params.decay);
-
-        oscillator.start(now);
-        oscillator.stop(now + params.decay);
-    }
-
-    playVariedSnare(params) {
-        const now = this.audioContext.currentTime;
-        const oscillator = this.audioContext.createOscillator();
-        const oscillatorGain = this.audioContext.createGain();
-
-        oscillator.connect(oscillatorGain);
-        oscillatorGain.connect(this.masterGain);
-
-        oscillator.frequency.value = params.frequency * 2; // Higher pitch than kick
-        oscillatorGain.gain.setValueAtTime(params.volume * 0.5, now);
-        oscillatorGain.gain.exponentialRampToValueAtTime(0.01, now + params.decay);
-
-        oscillator.start(now);
-        oscillator.stop(now + params.decay);
-    }
-
-    playVariedHiHat(params) {
-        const now = this.audioContext.currentTime;
-
-        const bufferSize = this.audioContext.sampleRate * params.decay;
-        const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
-        const output = buffer.getChannelData(0);
-
-        for (let i = 0; i < bufferSize; i++) {
-            output[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 3);
-        }
-
-        const noise = this.audioContext.createBufferSource();
-        const noiseGain = this.audioContext.createGain();
-        const noiseFilter = this.audioContext.createBiquadFilter();
-
-        noise.buffer = buffer;
-        noise.connect(noiseFilter);
-        noiseFilter.connect(noiseGain);
-        noiseGain.connect(this.masterGain);
-
-        noiseFilter.type = 'highpass';
-        noiseFilter.frequency.value = params.filterFreq * 8; // High frequency
-
-        noiseGain.gain.setValueAtTime(params.volume * 0.3, now);
-        noiseGain.gain.exponentialRampToValueAtTime(0.01, now + params.decay);
-
-        noise.start(now);
-    }
-
-    playVariedPerc(params) {
-        const now = this.audioContext.currentTime;
-
-        const oscillator = this.audioContext.createOscillator();
-        const oscillatorGain = this.audioContext.createGain();
-        const filter = this.audioContext.createBiquadFilter();
-
-        oscillator.connect(filter);
-        filter.connect(oscillatorGain);
-        oscillatorGain.connect(this.masterGain);
-
-        oscillator.frequency.setValueAtTime(params.frequency * 4, now);
-        oscillator.frequency.exponentialRampToValueAtTime(params.frequency, now + params.decay);
-
-        filter.type = 'bandpass';
-        filter.frequency.value = params.filterFreq;
-        filter.Q.value = 5 + Math.random() * 10;
-
-        oscillatorGain.gain.setValueAtTime(params.volume, now);
-        oscillatorGain.gain.exponentialRampToValueAtTime(0.01, now + params.decay);
-
-        oscillator.start(now);
-        oscillator.stop(now + params.decay);
-    }
-
-    // Standard drum sounds
-    playKick() {
+    // Enhanced drum sounds with volume control
+    playKick(volume = 1.0) {
         const now = this.audioContext.currentTime;
         const oscillator = this.audioContext.createOscillator();
         const oscillatorGain = this.audioContext.createGain();
@@ -289,14 +459,14 @@ class GeoS4SoundEngine {
         oscillator.frequency.setValueAtTime(60, now);
         oscillator.frequency.exponentialRampToValueAtTime(0.1, now + 0.5);
 
-        oscillatorGain.gain.setValueAtTime(1, now);
+        oscillatorGain.gain.setValueAtTime(volume, now);
         oscillatorGain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
 
         oscillator.start(now);
         oscillator.stop(now + 0.5);
     }
 
-    playSnare() {
+    playSnare(volume = 1.0) {
         const now = this.audioContext.currentTime;
 
         // Tone component
@@ -307,7 +477,7 @@ class GeoS4SoundEngine {
         oscillatorGain.connect(this.masterGain);
 
         oscillator.frequency.value = 200;
-        oscillatorGain.gain.setValueAtTime(0.3, now);
+        oscillatorGain.gain.setValueAtTime(0.3 * volume, now);
         oscillatorGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
 
         oscillator.start(now);
@@ -335,13 +505,13 @@ class GeoS4SoundEngine {
         noiseFilter.frequency.value = 1000;
         noiseFilter.Q.value = 0.5;
 
-        noiseGain.gain.setValueAtTime(0.8, now);
+        noiseGain.gain.setValueAtTime(0.8 * volume, now);
         noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
 
         noise.start(now);
     }
 
-    playHiHat() {
+    playHiHat(volume = 1.0) {
         const now = this.audioContext.currentTime;
 
         const bufferSize = this.audioContext.sampleRate * 0.1;
@@ -364,13 +534,13 @@ class GeoS4SoundEngine {
         noiseFilter.type = 'highpass';
         noiseFilter.frequency.value = 8000;
 
-        noiseGain.gain.setValueAtTime(0.3, now);
+        noiseGain.gain.setValueAtTime(0.3 * volume, now);
         noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
 
         noise.start(now);
     }
 
-    playPerc() {
+    playPerc(volume = 1.0) {
         const now = this.audioContext.currentTime;
 
         const oscillator = this.audioContext.createOscillator();
@@ -388,14 +558,14 @@ class GeoS4SoundEngine {
         filter.frequency.value = 1200;
         filter.Q.value = 5;
 
-        oscillatorGain.gain.setValueAtTime(0.4, now);
+        oscillatorGain.gain.setValueAtTime(0.4 * volume, now);
         oscillatorGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
 
         oscillator.start(now);
         oscillator.stop(now + 0.15);
     }
 
-    playClap() {
+    playClap(volume = 1.0) {
         const now = this.audioContext.currentTime;
 
         const bufferSize = this.audioContext.sampleRate * 0.15;
@@ -419,13 +589,13 @@ class GeoS4SoundEngine {
         noiseFilter.frequency.value = 1500;
         noiseFilter.Q.value = 2;
 
-        noiseGain.gain.setValueAtTime(0.6, now);
+        noiseGain.gain.setValueAtTime(0.6 * volume, now);
         noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
 
         noise.start(now);
     }
 
-    playCymbal() {
+    playCymbal(volume = 1.0) {
         const now = this.audioContext.currentTime;
 
         const bufferSize = this.audioContext.sampleRate * 1.5;
@@ -448,13 +618,13 @@ class GeoS4SoundEngine {
         noiseFilter.type = 'highpass';
         noiseFilter.frequency.value = 3000;
 
-        noiseGain.gain.setValueAtTime(0.4, now);
+        noiseGain.gain.setValueAtTime(0.4 * volume, now);
         noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 1.5);
 
         noise.start(now);
     }
 
-    playTom() {
+    playTom(volume = 1.0) {
         const now = this.audioContext.currentTime;
 
         const oscillator = this.audioContext.createOscillator();
@@ -466,14 +636,14 @@ class GeoS4SoundEngine {
         oscillator.frequency.setValueAtTime(150, now);
         oscillator.frequency.exponentialRampToValueAtTime(40, now + 0.3);
 
-        oscillatorGain.gain.setValueAtTime(0.6, now);
+        oscillatorGain.gain.setValueAtTime(0.6 * volume, now);
         oscillatorGain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
 
         oscillator.start(now);
         oscillator.stop(now + 0.3);
     }
 
-    playRim() {
+    playRim(volume = 1.0) {
         const now = this.audioContext.currentTime;
 
         const oscillator = this.audioContext.createOscillator();
@@ -489,14 +659,14 @@ class GeoS4SoundEngine {
         filter.frequency.value = 2000;
         filter.Q.value = 10;
 
-        oscillatorGain.gain.setValueAtTime(0.3, now);
+        oscillatorGain.gain.setValueAtTime(0.3 * volume, now);
         oscillatorGain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
 
         oscillator.start(now);
         oscillator.stop(now + 0.05);
     }
 
-    playCowbell() {
+    playCowbell(volume = 1.0) {
         const now = this.audioContext.currentTime;
 
         const oscillator1 = this.audioContext.createOscillator();
@@ -510,7 +680,7 @@ class GeoS4SoundEngine {
         oscillator1.frequency.value = 800;
         oscillator2.frequency.value = 540;
 
-        oscillatorGain.gain.setValueAtTime(0.3, now);
+        oscillatorGain.gain.setValueAtTime(0.3 * volume, now);
         oscillatorGain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
 
         oscillator1.start(now);
@@ -519,7 +689,7 @@ class GeoS4SoundEngine {
         oscillator2.stop(now + 0.25);
     }
 
-    playShaker() {
+    playShaker(volume = 1.0) {
         const now = this.audioContext.currentTime;
 
         const bufferSize = this.audioContext.sampleRate * 0.08;
@@ -542,13 +712,13 @@ class GeoS4SoundEngine {
         noiseFilter.type = 'highpass';
         noiseFilter.frequency.value = 10000;
 
-        noiseGain.gain.setValueAtTime(0.2, now);
+        noiseGain.gain.setValueAtTime(0.2 * volume, now);
         noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
 
         noise.start(now);
     }
 
-    playBass() {
+    playBass(volume = 1.0) {
         const now = this.audioContext.currentTime;
 
         const oscillator = this.audioContext.createOscillator();
@@ -565,18 +735,144 @@ class GeoS4SoundEngine {
         filter.type = 'lowpass';
         filter.frequency.value = 200;
 
-        oscillatorGain.gain.setValueAtTime(0.5, now);
+        oscillatorGain.gain.setValueAtTime(0.5 * volume, now);
         oscillatorGain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
 
         oscillator.start(now);
         oscillator.stop(now + 0.4);
     }
 
-    // Cleanup
+    // Varied sounds with parameters
+    playVariedKick(params, volume = 1.0) {
+        const now = this.audioContext.currentTime;
+        const oscillator = this.audioContext.createOscillator();
+        const oscillatorGain = this.audioContext.createGain();
+
+        oscillator.connect(oscillatorGain);
+        oscillatorGain.connect(this.masterGain);
+
+        oscillator.frequency.setValueAtTime(params.frequency, now);
+        oscillator.frequency.exponentialRampToValueAtTime(0.1, now + params.decay);
+
+        oscillatorGain.gain.setValueAtTime(params.volume * volume, now);
+        oscillatorGain.gain.exponentialRampToValueAtTime(0.01, now + params.decay);
+
+        oscillator.start(now);
+        oscillator.stop(now + params.decay);
+    }
+
+    playVariedSnare(params, volume = 1.0) {
+        const now = this.audioContext.currentTime;
+        const oscillator = this.audioContext.createOscillator();
+        const oscillatorGain = this.audioContext.createGain();
+
+        oscillator.connect(oscillatorGain);
+        oscillatorGain.connect(this.masterGain);
+
+        oscillator.frequency.value = params.frequency * 2;
+        oscillatorGain.gain.setValueAtTime(params.volume * 0.5 * volume, now);
+        oscillatorGain.gain.exponentialRampToValueAtTime(0.01, now + params.decay);
+
+        oscillator.start(now);
+        oscillator.stop(now + params.decay);
+    }
+
+    playVariedHiHat(params, volume = 1.0) {
+        const now = this.audioContext.currentTime;
+
+        const bufferSize = this.audioContext.sampleRate * params.decay;
+        const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+        const output = buffer.getChannelData(0);
+
+        for (let i = 0; i < bufferSize; i++) {
+            output[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 3);
+        }
+
+        const noise = this.audioContext.createBufferSource();
+        const noiseGain = this.audioContext.createGain();
+        const noiseFilter = this.audioContext.createBiquadFilter();
+
+        noise.buffer = buffer;
+        noise.connect(noiseFilter);
+        noiseFilter.connect(noiseGain);
+        noiseGain.connect(this.masterGain);
+
+        noiseFilter.type = 'highpass';
+        noiseFilter.frequency.value = params.filterFreq * 8;
+
+        noiseGain.gain.setValueAtTime(params.volume * 0.3 * volume, now);
+        noiseGain.gain.exponentialRampToValueAtTime(0.01, now + params.decay);
+
+        noise.start(now);
+    }
+
+    playVariedPerc(params, volume = 1.0) {
+        const now = this.audioContext.currentTime;
+
+        const oscillator = this.audioContext.createOscillator();
+        const oscillatorGain = this.audioContext.createGain();
+        const filter = this.audioContext.createBiquadFilter();
+
+        oscillator.connect(filter);
+        filter.connect(oscillatorGain);
+        oscillatorGain.connect(this.masterGain);
+
+        oscillator.frequency.setValueAtTime(params.frequency * 4, now);
+        oscillator.frequency.exponentialRampToValueAtTime(params.frequency, now + params.decay);
+
+        filter.type = 'bandpass';
+        filter.frequency.value = params.filterFreq;
+        filter.Q.value = 5 + Math.random() * 10;
+
+        oscillatorGain.gain.setValueAtTime(params.volume * volume, now);
+        oscillatorGain.gain.exponentialRampToValueAtTime(0.01, now + params.decay);
+
+        oscillator.start(now);
+        oscillator.stop(now + params.decay);
+    }
+
+    // === UTILITY METHODS ===
+
+    getRecordingStatus() {
+        return {
+            isRecording: this.isRecording,
+            duration: this.isRecording ? Date.now() - this.recordingStartTime : this.recordingDuration,
+            isSupported: typeof MediaRecorder !== 'undefined',
+            supportedFormats: this.getSupportedFormats()
+        };
+    }
+
+    getSupportedFormats() {
+        const formats = [
+            'audio/webm;codecs=opus',
+            'audio/webm',
+            'audio/mp4',
+            'audio/ogg;codecs=opus',
+            'audio/wav'
+        ];
+
+        return formats.filter(format =>
+            typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(format)
+        );
+    }
+
+    // === CLEANUP ===
+
     destroy() {
+        // Stop recording if active
+        if (this.isRecording) {
+            this.stopRecording();
+        }
+
+        // Clear custom audio buffers
+        this.customAudioBuffers.clear();
+
+        // Close audio context
         if (this.audioContext && this.audioContext.state !== 'closed') {
             this.audioContext.close();
         }
+
+        console.log('Sound engine destroyed');
     }
 }
 

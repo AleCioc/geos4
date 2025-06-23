@@ -198,16 +198,14 @@ def create_webaudio_sequencer(version, active_cells_data, bpm, is_playing, times
         'geos4_sequencers/horizontal_grid_sequencer_0'
     )
 
-    st.write(sequencer_base_path)
-
     filename_map = {
         'V0': 'horizontal_grid_sequencer_single_layer.html'
     }
 
     filepath = os.path.join(sequencer_base_path, filename_map.get(version, 'horizontal_grid_sequencer_single_layer.html'))
 
-    #if not os.path.exists(filepath):
-    #    return f"<div>Error: {filepath} not found. Please ensure the sequencer module is properly installed.</div>"
+    if not os.path.exists(filepath):
+        return f"<div>Error: {filepath} not found. Please ensure the sequencer module is properly installed.</div>"
 
     with open(filepath, 'r', encoding='utf-8') as f:
         html_template = f.read()

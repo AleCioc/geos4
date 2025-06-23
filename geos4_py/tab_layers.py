@@ -252,11 +252,6 @@ def render_layers_tab():
                     st.rerun()
 
             with action_col2:
-                if st.button("🎵 Play", key=f"play_{layer_id}", use_container_width=True):
-                    st.session_state.current_layer = layer_data
-                    st.switch_page("Play!")
-
-            with action_col3:
                 if st.button("🗑️ Delete", key=f"delete_{layer_id}", use_container_width=True, type="secondary"):
                     del st.session_state.stored_layers[layer_id]
                     if st.session_state.get('current_layer', {}).get('id') == layer_id:
